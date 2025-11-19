@@ -1,0 +1,13 @@
+[project]
+name = "rag-app"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "dotenv>=0.9.9",
+    "litellm>=1.80.0",
+    "pip>=25.3",
+    "pydantic>=2.12.4",
+    "requests>=2.32.5",
+]
