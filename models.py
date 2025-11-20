@@ -36,6 +36,17 @@ class Parameters(BaseModel):
     stream: bool = False
     api_base: str | None = None
 
+class ChromaDbResult(BaseModel):
+    id: str
+    document: str
+    metadata: dict
+    distance: float
+    
 # tracks the current state of a conversation
 class State(BaseModel):
     tokens: int 
+
+    # ids = raw.get("ids", [[]])[0]
+    # docs = raw.get("documents", [[]])[0]
+    # metas = raw.get("metadatas", [[]])[0]
+    # dists = raw.get("distances", [[]])[0]
