@@ -2,15 +2,26 @@ from pydantic import BaseModel
 from enum import Enum
 from typing import Literal, Dict, Any
 from tools import ToolName
+from logging import Logger
+from dataclasses import dataclass
 
-def make_enum(name: str, values: list[str]):
-    return Enum(name, {v: v for v in values})
+@dataclass
+class Configurations:
+    model: str
+    ollama_api_base: str
+    system_prompt: str
+    logger: Logger
+    chromadb_host: str
+    chromadb_port: int
+    embeddings_url: str
+    chroma_top_n: int
+    rerank_top_n: int
 
 # -----------------------------
-# Function definition (for sending TO the model)
+# Function definition
 # -----------------------------
 class FunctionDefinition(BaseModel):
-    name: Literal[ToolName]
+    name: str
     description: str = ""
     parameters: dict[str, Any]
 
@@ -19,10 +30,10 @@ class Tool(BaseModel):
     function: FunctionDefinition
 
 # -----------------------------
-# Function call (returned FROM the model)
+# Function call
 # -----------------------------
 class FunctionCall(BaseModel):
-    name: str | None = None
+    name: Literal["gdpr_query"] | None = None
     arguments: str | None = None
 
 class ToolCall(BaseModel):
@@ -37,6 +48,7 @@ class Message(BaseModel):
     role: Literal["user", "assistant", "system", "tool"]
     content: str | None = None
     tool_calls: list[ToolCall] | None = None
+    tool_call_id: str | None = None
     function_call: FunctionCall | None = None
     provider_specific_fields: dict | None = None
 
@@ -58,7 +70,6 @@ class ChromaDbResult(BaseModel):
     document: str
     metadata: dict
     distance: float
-
 
 # tracks the current state of a conversation
 class State(BaseModel):
