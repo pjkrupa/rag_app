@@ -1,24 +1,38 @@
 from pydantic import BaseModel
-from typing import Literal
+from enum import Enum
+from typing import Literal, Dict, Any
+from tools import ToolName
 
-class Function(BaseModel):
-    name: str
+def make_enum(name: str, values: list[str]):
+    return Enum(name, {v: v for v in values})
+
+# -----------------------------
+# Function definition (for sending TO the model)
+# -----------------------------
+class FunctionDefinition(BaseModel):
+    name: Literal[ToolName]
     description: str = ""
-    parameters: dict
+    parameters: dict[str, Any]
 
 class Tool(BaseModel):
     type: str = "function"
-    function: Function
+    function: FunctionDefinition
 
-class ToolCall(BaseModel):
-    id: str
-    type: Literal["function"]
-    function: dict  # {"name": str, "arguments": json-string}
-
+# -----------------------------
+# Function call (returned FROM the model)
+# -----------------------------
 class FunctionCall(BaseModel):
     name: str | None = None
     arguments: str | None = None
 
+class ToolCall(BaseModel):
+    id: str
+    type: Literal["function"]
+    function: FunctionCall
+
+# -----------------------------
+# Standard message model that works for both sent and received messages
+# -----------------------------
 class Message(BaseModel):
     role: Literal["user", "assistant", "system", "tool"]
     content: str | None = None
@@ -26,9 +40,9 @@ class Message(BaseModel):
     function_call: FunctionCall | None = None
     provider_specific_fields: dict | None = None
 
-class Tools(BaseModel):
-    tools: list[Tool]
-
+# -----------------------------
+# Brings everything together to formulate the LiteLLM request
+# -----------------------------
 class Parameters(BaseModel):
     model: str
     messages: list[Message]
@@ -36,17 +50,16 @@ class Parameters(BaseModel):
     stream: bool = False
     api_base: str | None = None
 
+# -----------------------------
+# Models a single result from a ChromaDB query
+# -----------------------------
 class ChromaDbResult(BaseModel):
     id: str
     document: str
     metadata: dict
     distance: float
-    
+
+
 # tracks the current state of a conversation
 class State(BaseModel):
-    tokens: int 
-
-    # ids = raw.get("ids", [[]])[0]
-    # docs = raw.get("documents", [[]])[0]
-    # metas = raw.get("metadatas", [[]])[0]
-    # dists = raw.get("distances", [[]])[0]
+    tokens: int
