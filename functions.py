@@ -9,6 +9,18 @@ from tools import TOOLS
 from litellm import completion
 from pprint import pprint
 
+class Chat:
+    def __init__(self, configs: Configurations, id: str = ""):
+        self.configs = configs
+        self.id = id
+        self.messages = [Message(role="system", content=configs.system_prompt)]
+    
+    def add_message(self, message: Message):
+        self.messages.append(message)
+    
+
+        
+
 # a quick wrapper that handles errors and logs them.
 def handle_api_errors(default):
     def decorator(func):
