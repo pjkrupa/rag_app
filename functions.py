@@ -9,18 +9,6 @@ from tools import TOOLS
 from litellm import completion
 from pprint import pprint
 
-class Chat:
-    def __init__(self, configs: Configurations, id: str = ""):
-        self.configs = configs
-        self.id = id
-        self.messages = [Message(role="system", content=configs.system_prompt)]
-    
-    def add_message(self, message: Message):
-        self.messages.append(message)
-    
-
-        
-
 # a quick wrapper that handles errors and logs them.
 def handle_api_errors(default):
     def decorator(func):
@@ -38,94 +26,101 @@ def handle_api_errors(default):
         return wrapper
     return decorator
 
- 
-@handle_api_errors(default=[])
-def embed(
-    text: str, 
-    config: Configurations
-    ) -> list[float]:
-    """
-    Hits a custom API that uses a transformer to calculate embeddings.
+class Chat:
+    def __init__(self, configs: Configurations, id: str = ""):
+        self.configs = configs
+        self.id = id
+        self.messages = [Message(role="system", content=configs.system_prompt)]
+    
+    def add_message(self, message: Message):
+        self.messages.append(message)
 
-    Parameters:
-    text -> The text to be converted to embeddings, str.
-    config -> Configurations object
+class EmbeddingsClient:
+    def __init__(self, configs: Configurations):
+        self.configs = configs
+    
+    @handle_api_errors(default=[])
+    def embed(self, text: str) -> list[float]:
+        """
+        Hits a custom API that uses a transformer to calculate embeddings.
 
-    Returns:
-    The embedding, list[float]
-    """
-    logger = config.logger
-    start = time.time()
+        Parameters:
+        text -> The text to be converted to embeddings, str.
+        config -> Configurations object
 
-    resp = requests.post(
-        f"{config.embeddings_url}/embeddings",
-        json={"text": text},
-        timeout=20
-    )
-    resp.raise_for_status()
+        Returns:
+        The embedding, list[float]
+        """
+        logger = self.configs.logger
+        start = time.time()
 
-    data = resp.json()
-    embedding = data.get("embedding", [])
+        resp = requests.post(
+            f"{self.configs.embeddings_url}/embeddings",
+            json={"text": text},
+            timeout=20
+        )
+        resp.raise_for_status()
 
-    logger.info("-" * 50)
-    logger.info("Successfully fetched embedding.")
-    logger.info(f"RESPONSE TIME: {time.time() - start:.3f}s")
-    logger.info(f"EMBED FETCH STATUS: {resp.status_code}")
-    logger.info("-" * 50)
+        data = resp.json()
+        embedding = data.get("embedding", [])
 
-    return embedding
+        logger.info("-" * 50)
+        logger.info("Successfully fetched embedding.")
+        logger.info(f"RESPONSE TIME: {time.time() - start:.3f}s")
+        logger.info(f"EMBED FETCH STATUS: {resp.status_code}")
+        logger.info("-" * 50)
 
-# Gotta refactor this to handle the config object
-@handle_api_errors(default={})
-def rerank(
+        return embedding
+
+    @handle_api_errors(default={})
+    def rerank(
+        self,
         query_text: str, 
         results: list[ChromaDbResult],
-        config: Configurations
         ) -> dict:
-    """
-    Runs reranking on the ChromaDB results and returns the IDs of the top_n query responses.
+        """
+        Runs reranking on the ChromaDB results and returns the IDs of the top_n query responses.
 
-    Parameters:
-    query_text -> the text of the original query, str
-    results -> a list of results in the form of ChromaDbResult model objects, list[ChromaDbResult]
-    url -> URL of the embedding server, str
-    logger -> Logger object, Logger
+        Parameters:
+        query_text -> the text of the original query, str
+        results -> a list of results in the form of ChromaDbResult model objects, list[ChromaDbResult]
+        url -> URL of the embedding server, str
+        logger -> Logger object, Logger
 
-    Returns:
-    dict{
-        "results": [
-            {"id": str, "score": float},
-            {"id": str, "score": float}
+        Returns:
+        dict{
+            "results": [
+                {"id": str, "score": float},
+                {"id": str, "score": float}
+            ]
+            }
+        """
+        logger = self.configs.logger
+        endpoint = f"{self.configs.embeddings_url}/reranking"
+        start = time.time()
+        items = [
+            {"id": result.id, "text": result.document} for result in results
         ]
-        }
-    """
-    logger = config.logger
-    endpoint = f"{config.embeddings_url}/reranking"
-    start = time.time()
-    items = [
-        {"id": result.id, "text": result.document} for result in results
-    ]
 
-    request_payload = {
-        "query": query_text, 
-        "items": items, 
-        "top_n": config.rerank_top_n
-        }
-    
-    resp = requests.post(
-        endpoint, 
-        json=request_payload, 
-        timeout=20
-    )
+        request_payload = {
+            "query": query_text, 
+            "items": items, 
+            "top_n": self.configs.rerank_top_n
+            }
+        
+        resp = requests.post(
+            endpoint, 
+            json=request_payload, 
+            timeout=20
+        )
 
-    logger.info("-" * 50)
-    logger.info("Successfully reranked.")
-    logger.info(f"RESPONSE TIME: {time.time() - start:.3f}s")
-    logger.info(f"RERANK STATUS: {resp.status_code}")
-    logger.info("-" * 50)
-    return resp.json()
+        logger.info("-" * 50)
+        logger.info("Successfully reranked.")
+        logger.info(f"RESPONSE TIME: {time.time() - start:.3f}s")
+        logger.info(f"RERANK STATUS: {resp.status_code}")
+        logger.info("-" * 50)
+        return resp.json()
 
-# need to refactor to handle the config object
 @handle_api_errors(default={})
 def query_collection(
         query_embedding: list[float],
@@ -221,7 +216,8 @@ def handle_tool_call(
             print(arguments)
 
             # gets the vector representation of the query
-            vec_query = embed(text=arguments["query_text"], config=config)
+            emb_client = EmbeddingsClient(configs=config)
+            vec_query = emb_client.embed(text=arguments["query_text"])
 
             # returns list of ChromaDbResult objects
             chromadb_response = query_collection(
@@ -231,10 +227,9 @@ def handle_tool_call(
                 )
             
             # runs the reranking
-            rerank_result = rerank(
+            rerank_result = emb_client.rerank(
                 query_text=arguments["query_text"], 
-                results=chromadb_response, 
-                config=config
+                results=chromadb_response,
                 )
             
             # pprint(rerank_result)
