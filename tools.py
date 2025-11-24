@@ -23,4 +23,3 @@ def make_enum(name: str, values: list[str]):
 
 tools = [tool["name"] for tool in TOOLS]
 ToolName = make_enum("ToolName", tools)
-print(type(ToolName))
