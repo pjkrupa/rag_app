@@ -6,7 +6,7 @@ from models import *
 from logging_setup import get_logger
 from litellm import completion
 from tools import TOOLS
-from functions import handle_tool_call, litellm_request, Chat
+from functions import handle_tool_call, Chat, LiteLlmClient
 from dataclasses import dataclass
 from logging import Logger
 
@@ -32,36 +32,22 @@ if __name__ == "__main__":
     )
     
     chat = Chat(configs=configs)
-    # set the tools
     tools = [Tool(type="function", function=FunctionDefinition.model_validate(tool)) for tool in TOOLS]
-    print(f"Available tools are: {tools}")
+    lite_client = LiteLlmClient(configs=configs, tools=tools)
 
     while True:
         prompt_message = Message(role="user", content=input("Give me a prompt--> "))
         chat.add_message(prompt_message)
-        response = litellm_request(
-            configs=configs, 
-            messages=chat.messages, 
-            tools=tools
-            )
-
-        # Takes the Message class object from LiteLLM and converts it to my Message class object
-        lite_msg = response.choices[0].message
-        response_message = Message.model_validate(lite_msg.model_dump())
+        response = lite_client.request(messages=chat.messages)
+        response_message = lite_client.get_messsage(response=response)
 
         # Check if the model called a tool:
         if response_message.tool_calls:
             # tool_response should be a Message object with "role" set to "tool"
             tool_message = handle_tool_call(response_message, configs)
             chat.add_message(tool_message)
-            tool_response = litellm_request(
-                configs=configs,
-                messages=chat.messages,
-                tools=tools
-            )
-            # Takes the Message class object from LiteLLM and converts it to my Message class object
-            lite_msg = tool_response.choices[0].message
-            final_response_message = Message.model_validate(lite_msg.model_dump())
+            tool_response = lite_client.request(messages=chat.messages)
+            final_response_message = lite_client.get_messsage(response=tool_response)
             print("\nAssistant:", final_response_message.content, "\n")
             chat.add_message(final_response_message)
         else:

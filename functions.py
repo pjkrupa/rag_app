@@ -4,7 +4,7 @@ from datetime import datetime
 import chromadb
 from logging import Logger
 from functools import wraps
-from models import ChromaDbResult, Message, Parameters, Configurations
+from models import ChromaDbResult, Message, Parameters, Configurations, Tool
 from tools import TOOLS
 from litellm import completion
 from pprint import pprint
@@ -121,6 +121,36 @@ class EmbeddingsClient:
         logger.info("-" * 50)
         return resp.json()
 
+class LiteLlmClient:
+    def __init__(
+            self, 
+            configs: Configurations, 
+            tools: list[Tool]):
+        self.configs = configs
+        self.tools = tools
+
+    # need to add error handling and retries for this.
+    def request(self, messages: list[Message]
+        ) -> Message:
+        params = Parameters(
+                model=self.configs.model, 
+                messages=messages, 
+                api_base=self.configs.ollama_api_base, 
+                tools=self.tools
+                )
+        return completion(**params.model_dump())
+    
+    def get_messsage(self, response):
+        lite_msg = response.choices[0].message
+        return Message.model_validate(lite_msg.model_dump())
+
+#FINISH THIS. 
+class RagClient:
+    def __init__(self, configs: Configurations):
+        self.configs = configs
+        self.emb_client = EmbeddingsClient(configs=configs)
+# ------------------------------
+
 @handle_api_errors(default={})
 def query_collection(
         query_embedding: list[float],
@@ -178,20 +208,6 @@ def filter_results(
             if result.id == item["id"]:
                 filtered_results.append(result)
     return filtered_results
-
-def litellm_request(
-        configs: Configurations, 
-        messages: list[Message], 
-        tools: list
-        ) -> Message:
-    params = Parameters(
-            model=configs.model, 
-            messages=messages, 
-            api_base=configs.ollama_api_base, 
-            tools=tools
-            )
-    return completion(**params.model_dump())
-
     
 def handle_tool_call(
         response_message: Message,
