@@ -18,6 +18,19 @@ MOCK_TOOLS = [
     "required": ["query_text"]
 }
     },
+    {"name": "fake_tool",
+     "description": "Description of my fake tool.",
+     "parameters": {
+        "type": "object",
+        "properties": {
+            "query_text": {
+                "type": "string",
+                "description": "query string goes here."
+            }
+        },
+    "required": ["query_text"]
+}
+    }
 ]
 
 mock_tools = [Tool(type="function", function=FunctionDefinition.model_validate(tool)) for tool in MOCK_TOOLS]
@@ -97,9 +110,16 @@ def test_llm_client_get_message(llm_client):
     assert result.role == "user"
     assert result.content == "test content"
 
-def test_tools_client_handle(tools_client):
-    fake_function_call = FunctionCall(name="gdpr_query", arguments=json.dumps({"query_text": "test query text"}))
+def test_tools_client_handle_undefined_tool(tools_client):
+    fake_function_call = FunctionCall(name="fake_tool", arguments=json.dumps({"query_text": "test query text"}))
     fake_tool_call = ToolCall(id="1234", type="function", function=fake_function_call)
     fake_message = Message(role="user", content="test content", tool_calls=[fake_tool_call])
+    message = tools_client.handle(fake_message)
+    assert message.content == "Tool not found."
 
-    result = tools_client.handle(fake_message)
+def test_tools_client_handle_nonexistent_tool(tools_client):
+    fake_function_call = FunctionCall(name="nonexistent_tool", arguments=json.dumps({"query_text": "test query text"}))
+    fake_tool_call = ToolCall(id="1234", type="function", function=fake_function_call)
+    fake_message = Message(role="user", content="test content", tool_calls=[fake_tool_call])
+    message = tools_client.handle(fake_message)
+    assert message.content == "There is no tool with that name."

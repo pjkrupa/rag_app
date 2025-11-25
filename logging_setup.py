@@ -1,11 +1,11 @@
 import logging
 
 def get_logger(
-        name='__name__', 
+        name=__name__, 
         path='rag.log', 
         level=logging.INFO,
         ):
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger(name=name)
     logger.setLevel(level)
 
     file_handler = logging.FileHandler(

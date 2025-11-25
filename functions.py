@@ -151,7 +151,7 @@ class ToolHandler:
 
             if tool_call.function.name not in self.tool_names:
                 self.logger.error(f"The model tried to call tool {tool_call.function.name}, which is not in the list of tool names: {self.tool_names} ")
-                return Message(role='tool', tool_call_id=tool_call.id, content='There is no tool with that name')
+                return Message(role='tool', tool_call_id=tool_call.id, content='There is no tool with that name.')
             
             # need an elif block for each name in tool_names
             elif tool_call.function.name == "gdpr_query":
@@ -216,49 +216,6 @@ class RagClient:
                 if result.id == item["id"]:
                     filtered_results.append(result)
         return filtered_results
-    
-
-    
-
-    
-# def handle_tool_call(
-#         response_message: Message,
-#         config: Configurations,
-#         ) -> Message:
-#     """
-#     should return a Message object with "role" set to "tool"
-#     """
-#     tool_names = [item["name"] for item in TOOLS]
-#     logger = config.logger
-
-#     for tool_call in response_message.tool_calls:
-
-#         if tool_call.function.name not in tool_names:
-#             logger.error(f"The model tried to call tool {tool_call.function.name}, which is not in the list of tool names: {tool_names} ")
-#             return Message(role='tool', tool_call_id=tool_call.id, content='There is no tool with that name')
-        
-#         # need an elif block for each name in tool_names
-#         elif tool_call.function.name == "gdpr_query":
-#             arguments = json.loads(tool_call.function.arguments)
-#             logger.info(f"Call for tool {tool_call.function.name}: {arguments}")
-#             # gets the vector representation of the query
-#             emb_client = EmbeddingsClient(configs=config)
-#             vec_query = emb_client.embed(text=arguments["query_text"])
-
-#             # returns list of ChromaDbResult objects
-#             chromadb_response = query_collection(
-#                 query_embedding=vec_query, 
-#                 collection="gdpr", 
-#                 config=config
-#                 )
-            
-#             # runs the reranking
-#             rerank_result = emb_client.rerank(
-#                 query_text=arguments["query_text"], 
-#                 results=chromadb_response,
-#                 )
-            
-#             #applies the reranking findings
             
             
             
