@@ -3,7 +3,7 @@ from dotenv import load_dotenv
 from models import *
 from logging_setup import get_logger
 from tools import TOOLS
-from functions import Chat, LiteLlmClient, ToolHandler
+from functions import Chat, LlmClient, ToolHandler
 
 if __name__ == "__main__":
     
@@ -29,7 +29,7 @@ if __name__ == "__main__":
     # instantiate the chat, tools, and clients
     chat = Chat(configs=configs)
     tools = [Tool(type="function", function=FunctionDefinition.model_validate(tool)) for tool in TOOLS]
-    llm_client = LiteLlmClient(configs=configs, tools=tools)
+    llm_client = LlmClient(configs=configs, tools=tools)
     tool_client = ToolHandler(configs=configs, tools=tools)
 
     while True:

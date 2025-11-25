@@ -33,7 +33,7 @@ class Tool(BaseModel):
 # Function call
 # -----------------------------
 class FunctionCall(BaseModel):
-    name: Literal["gdpr_query"] | None = None
+    name: str | None = None
     arguments: str | None = None
 
 class ToolCall(BaseModel):

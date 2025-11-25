@@ -5,7 +5,6 @@ import chromadb
 from logging import Logger
 from functools import wraps
 from models import ChromaDbResult, Message, Parameters, Configurations, Tool
-from tools import TOOLS
 from litellm import completion
 from pprint import pprint
 
@@ -64,6 +63,14 @@ class EmbeddingsClient:
 
         return embedding
 
+    def _build_rerank_payload(self, query_text: str, results: list[ChromaDbResult]) -> dict:
+        items = [ {"id": r.id, "text": r.document} for r in results ]
+        return {
+            "query": query_text,
+            "items": items,
+            "top_n": self.configs.rerank_top_n
+        }
+    
     @handle_api_errors(default={})
     def rerank(
         self,
@@ -90,16 +97,7 @@ class EmbeddingsClient:
         logger = self.configs.logger
         endpoint = f"{self.configs.embeddings_url}/reranking"
         start = time.time()
-        items = [
-            {"id": result.id, "text": result.document} for result in results
-        ]
-
-        request_payload = {
-            "query": query_text, 
-            "items": items, 
-            "top_n": self.configs.rerank_top_n
-            }
-        
+        request_payload = self._build_rerank_payload(query_text, results)
         resp = requests.post(
             endpoint, 
             json=request_payload, 
@@ -111,9 +109,10 @@ class EmbeddingsClient:
         logger.info(f"RESPONSE TIME: {time.time() - start:.3f}s")
         logger.info(f"RERANK STATUS: {resp.status_code}")
         logger.info("-" * 50)
+
         return resp.json()
 
-class LiteLlmClient:
+class LlmClient:
     def __init__(
             self, 
             configs: Configurations, 
@@ -121,7 +120,8 @@ class LiteLlmClient:
         self.configs = configs
         self.tools = tools
 
-    # need to add error handling and retries for this.
+    # TODO: need to add error handling and retries for this.
+    # TODO: also need to add an optional tools parameter for if user wants to call tools
     def send_request(self, messages: list[Message]
         ) -> Message:
         params = Parameters(
