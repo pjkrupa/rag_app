@@ -1,8 +1,11 @@
 import pytest, logging,json
 from unittest.mock import patch, MagicMock
-from functions import Chat, EmbeddingsClient, LlmClient, ToolHandler
-from models import *
-from logging_setup import get_logger
+from app.core.config import Configurations
+from app.services.chat import Chat
+from app.services.embeddings import EmbeddingsClient
+from app.services.llm_client import LlmClient
+from app.services.tool_handler import ToolHandler
+from app.models import *
 
 MOCK_TOOLS = [
     {"name": "gdpr_query",
@@ -81,7 +84,7 @@ def test_embedder_output(embeder):
     mock_resp.raise_for_status.return_value = None
     mock_resp.json.return_value = {"embedding": fake_embedding}
     mock_resp.status_code = 200
-    with patch("functions.requests.post", return_value=mock_resp):
+    with patch("app.services.embeddings.requests.post", return_value=mock_resp):
         result = embeder.embed("test text")
     assert result == fake_embedding
 

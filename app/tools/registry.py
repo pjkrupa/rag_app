@@ -1,5 +1,3 @@
-from enum import Enum
-
 # defines the tools available to the model
 TOOLS = [
     {"name": "gdpr_query",
@@ -16,10 +14,3 @@ TOOLS = [
 }
     },
 ]
-
-# convert tool names into enum for model
-def make_enum(name: str, values: list[str]):
-    return Enum(name, {v: v for v in values})
-
-tools = [tool["name"] for tool in TOOLS]
-ToolName = make_enum("ToolName", tools)

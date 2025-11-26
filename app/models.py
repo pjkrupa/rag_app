@@ -1,21 +1,5 @@
 from pydantic import BaseModel
-from enum import Enum
-from typing import Literal, Dict, Any
-from tools import ToolName
-from logging import Logger
-from dataclasses import dataclass
-
-@dataclass
-class Configurations:
-    model: str
-    ollama_api_base: str
-    system_prompt: str
-    logger: Logger
-    chromadb_host: str
-    chromadb_port: int
-    embeddings_url: str
-    chroma_top_n: int
-    rerank_top_n: int
+from typing import Literal, Any
 
 # -----------------------------
 # Function definition
@@ -43,6 +27,7 @@ class ToolCall(BaseModel):
 
 # -----------------------------
 # Standard message model that works for both sent and received messages
+# Many of the fields are optional to account for messages that have or don't have tool calls
 # -----------------------------
 class Message(BaseModel):
     role: Literal["user", "assistant", "system", "tool"]

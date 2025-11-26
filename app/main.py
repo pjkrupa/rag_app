@@ -1,9 +1,12 @@
 import os
 from dotenv import load_dotenv
 from models import *
-from logging_setup import get_logger
-from tools import TOOLS
-from functions import Chat, LlmClient, ToolHandler
+from core.config import Configurations
+from core.logging_setup import get_logger
+from tools.registry import TOOLS
+from services.chat import Chat
+from services.llm_client import LlmClient
+from services.tool_handler import ToolHandler
 
 if __name__ == "__main__":
     
