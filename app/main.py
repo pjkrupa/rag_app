@@ -26,7 +26,8 @@ if __name__ == "__main__":
         chromadb_port=int(os.getenv("CHROMADB_PORT")),
         embeddings_url=os.getenv("EMBEDDINGS_URL"),
         chroma_top_n=int(os.getenv("CHROMA_TOP_N")),
-        rerank_top_n=int(os.getenv("RERANK_TOP_N"))
+        rerank_top_n=int(os.getenv("RERANK_TOP_N")),
+        sqlite_path=os.getenv("SQLITE_PATH")
     )
     
     # instantiate the chat, tools, and clients

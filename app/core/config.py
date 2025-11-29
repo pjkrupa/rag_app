@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from logging import Logger
+from app.services.db_manager import DatabaseManager
 
 @dataclass
 class Configurations:
@@ -12,3 +13,4 @@ class Configurations:
     embeddings_url: str
     chroma_top_n: int
     rerank_top_n: int
+    sqlite_path: str
