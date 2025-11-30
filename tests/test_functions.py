@@ -5,6 +5,7 @@ from app.services.chat import Chat
 from app.services.embeddings import EmbeddingsClient
 from app.services.llm_client import LlmClient
 from app.services.tool_handler import ToolHandler
+from app.services.db_manager import DatabaseManager
 from app.models import *
 
 MOCK_TOOLS = [
@@ -51,12 +52,26 @@ mock_configs = Configurations(
         chromadb_port=8000,
         embeddings_url="http://localhost:8001",
         chroma_top_n=10,
-        rerank_top_n=3
+        rerank_top_n=3,
+        sqlite_path="test.db"
     )
 
 @pytest.fixture
-def chat():
-    return Chat(configs=mock_configs)
+def mock_db():
+    db = MagicMock()
+    db.create_chat.return_value = 1
+    mock_message = Message(role='system', content="system prompt")
+    db.get_messages.return_value = json.dumps([mock_message.model_dump()])
+    return db
+
+@pytest.fixture
+def new_chat(mock_db):
+    return Chat(configs=mock_configs, db=mock_db, chat_id=None, user_id="abc")
+
+# need to add error handling and check it by trying to instantiate a non-existent chat.
+@pytest.fixture
+def existing_chat(mock_db):
+    return Chat(configs=mock_configs, db=mock_db, chat_id=2, user_id="abc1")
 
 @pytest.fixture
 def embeder():
@@ -70,13 +85,15 @@ def llm_client():
 def tools_client():
     return ToolHandler(configs=mock_configs, tools=mock_tools)
 
-def test_chat_instantiate_chat(chat):
-    assert len(chat.messages) == 1
+def test_chat_instantiate_chat(new_chat):
+    assert len(new_chat.messages) == 1
+    assert new_chat.chat_id == 1
+    assert new_chat.user_id == "abc"
     
-def test_chat_add_message(chat):
+def test_chat_add_message(existing_chat):
     message = Message(role="user", content="Content goes here.")
-    chat.add_message(message)
-    assert len(chat.messages) == 2
+    existing_chat.add_message(message)
+    assert len(existing_chat.messages) == 2
 
 def test_embedder_output(embeder):
     fake_embedding = [0.1, 0.2, 0.3]

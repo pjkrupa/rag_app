@@ -7,11 +7,8 @@ class SessionManager:
     def __init__(self, configs: Configurations, user_id: str, chat_id: int = None):
         self.configs = configs
         self.user_id = user_id
-        self.chat = Chat(user_id=user_id, configs=configs, chat_id=chat_id)
         self.db = DatabaseManager(configs=self.configs)
-
-
-        
+        self.chat = Chat(db=self.db, user_id=user_id, configs=configs, chat_id=chat_id)
         
     
     

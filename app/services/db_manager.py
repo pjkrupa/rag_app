@@ -1,6 +1,10 @@
 import sqlite3
-from core.config import Configurations
-from chat import Chat
+from uuid import uuid4
+from app.core.config import Configurations
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.services.chat import Chat   # type-checking only, no runtime import
 
 class DatabaseManager:
 
@@ -41,6 +45,19 @@ class DatabaseManager:
             )
         """)
     
+    def create_user(self, user_name):
+        """
+        inserts a user into the users table.
+        """
+        cursor = self.conn.cursor()
+        cursor.execute(
+            """
+            INSERT INTO users (id, user_name)
+            VALUES (?, ?)
+            """,
+            (uuid4(), user_name)
+        )
+
     def create_chat(self, user_id: str, messages_blob: str) -> int:
         """
         instantiates a new chat record, returning the chat id.
@@ -56,7 +73,7 @@ class DatabaseManager:
         self.conn.commit()
         return cursor.lastrowid
     
-    def save_chat(self, chat: Chat) -> int:
+    def save_chat(self, chat: "Chat") -> int:
         """
         saves an existing chat to the SQLite database
         """
@@ -75,7 +92,7 @@ class DatabaseManager:
 
     def get_messages(self, chat_id: int) -> str:
         """
-        loads messages from the SQLite chats table... returns them as a JSON blob
+        gets messages from the SQLite chats table... returns them as a JSON blob
         """
         cursor = self.conn.cursor()
         cursor.execute(

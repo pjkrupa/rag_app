@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from logging import Logger
-from app.services.db_manager import DatabaseManager
 
 @dataclass
 class Configurations:

@@ -12,7 +12,7 @@ class Chat:
         self.messages = [Message(role="system", content=configs.system_prompt)]
     
         if self.chat_id:
-            self.messages = self.load_messages(chat_id)
+            self.load_messages(chat_id)
         else:
             messages_blob = self.dump_to_blob()
             self.chat_id = self.db.create_chat(user_id=user_id, messages_blob=messages_blob)
@@ -24,7 +24,7 @@ class Chat:
         return json.dumps([message.model_dump() for message in self.messages])
     
     def blob_to_messages(self, messages_blob: str):
-        self.messages = [Message(**obj) for obj in json.loads(messages_blob)]
+        return [Message(**obj) for obj in json.loads(messages_blob)]
 
     def load_messages(self, chat_id: str):
         messages_blob = self.db.get_messages(chat_id=chat_id)
