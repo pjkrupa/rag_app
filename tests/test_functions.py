@@ -2,6 +2,7 @@ import pytest, logging,json
 from unittest.mock import patch, MagicMock
 from app.core.config import Configurations
 from app.services.chat import Chat
+from app.services.user import User
 from app.services.embeddings import EmbeddingsClient
 from app.services.llm_client import LlmClient
 from app.services.tool_handler import ToolHandler
@@ -65,13 +66,20 @@ def mock_db():
     return db
 
 @pytest.fixture
-def new_chat(mock_db):
-    return Chat(configs=mock_configs, db=mock_db, chat_id=None, user_id="abc")
+def mock_user():
+    user = MagicMock()
+    user.name = "user_1"
+    user.id = 1
+    return user
+
+@pytest.fixture
+def new_chat(mock_db, mock_user):
+    return Chat(configs=mock_configs, db=mock_db, chat_id=None, user=mock_user)
 
 # need to add error handling and check it by trying to instantiate a non-existent chat.
 @pytest.fixture
-def existing_chat(mock_db):
-    return Chat(configs=mock_configs, db=mock_db, chat_id=2, user_id="abc1")
+def existing_chat(mock_db, mock_user):
+    return Chat(configs=mock_configs, db=mock_db, chat_id=2, user=mock_user)
 
 @pytest.fixture
 def embeder():
@@ -87,8 +95,8 @@ def tools_client():
 
 def test_chat_instantiate_chat(new_chat):
     assert len(new_chat.messages) == 1
-    assert new_chat.chat_id == 1
-    assert new_chat.user_id == "abc"
+    assert new_chat.user.id == 1
+    assert new_chat.user.name == "user_1"
     
 def test_chat_add_message(existing_chat):
     message = Message(role="user", content="Content goes here.")

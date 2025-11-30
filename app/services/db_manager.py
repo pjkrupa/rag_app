@@ -23,8 +23,9 @@ class DatabaseManager:
         cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS users (
-            id TEXT PRIMARY KEY,
-            user_name TEXT
+            id INTEGER PRIMARY KEY,
+            user_name TEXT UNIQUE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             )
         """)
     
@@ -37,7 +38,7 @@ class DatabaseManager:
         """
         CREATE TABLE IF NOT EXISTS chats (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            user_id TEXT,
+            user_id INTEGER,
             messages TEXT,
             FOREIGN KEY (user_id)
                 REFERENCES users(id)
@@ -52,13 +53,35 @@ class DatabaseManager:
         cursor = self.conn.cursor()
         cursor.execute(
             """
-            INSERT INTO users (id, user_name)
-            VALUES (?, ?)
+            INSERT INTO users (user_name)
+            VALUES (?)
             """,
-            (uuid4(), user_name)
+            (user_name,)
         )
 
-    def create_chat(self, user_id: str, messages_blob: str) -> int:
+    def check_user(self, user_name: str):
+        """
+        verifies user name, returns id
+        """
+        cursor = self.conn.cursor()
+        cursor.execute(
+            """
+            SELECT id
+            FROM users
+            WHERE user_name = ?
+            """,
+            (user_name,)
+        )
+
+        row = cursor.fetchone()
+
+        # add error handling/logging here
+        if row is None:
+            return None  # no user with that name
+
+        return row[0]
+
+    def create_chat(self, user_id: int, messages_blob: str) -> int:
         """
         instantiates a new chat record, returning the chat id.
         """
