@@ -4,6 +4,11 @@ from app.models import Message
 from app.services.db_manager import DatabaseManager
 from app.services.user import User
 
+# implement this like in the user module
+class ChatNotFoundError(Exception):
+    """Raised when a chat is not found in the database"""
+    pass
+
 class Chat:
     def __init__(self, user: User, db: DatabaseManager, configs: Configurations, chat_id: int = None):
         self.configs = configs
