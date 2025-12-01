@@ -1,10 +1,10 @@
 from app.core.config import Configurations
-from app.services.user import User, UserNotFoundError
+from app.services.user import User
 from app.services.db_manager import DatabaseManager
 from app.services.chat import Chat
 from app.services.llm_client import LlmClient
 from app.models import *
-from app.tools.registry import TOOLS
+from app.core.errors import *
 from app.services.tool_handler import ToolHandler
 
 
@@ -15,28 +15,47 @@ class Orchestrator:
         self.logger = self.configs.logger
         self.user = None
         self.chat = None
-        tools = [Tool(type="function", function=FunctionDefinition.model_validate(tool)) for tool in TOOLS]
-        self.llm_client = LlmClient(configs=configs, tools=tools)
-        self.tool_client = ToolHandler(configs=configs, tools=tools)
+        self.llm_client = LlmClient(configs=configs)
+        self.tool_client = ToolHandler(configs=configs)
 
     def get_user_name(self, user_name: str):
-        try:
-            self.user = User(configs=self.configs, db=self.db, user_name=user_name)
-            self.chat = Chat(user=self.user, db=self.db, configs=self.configs)
-            return self.user
-        except UserNotFoundError as e:
-            self.logger.error(f"{e}")
-            return None
+        while True:
+            try:
+                self.user = User(configs=self.configs, db=self.db, user_name=user_name)
+                self.chat = Chat(user=self.user, db=self.db, configs=self.configs)
+                return
+            except UserNotFoundError as e:
+                self.logger.error(f"User not found: {e}")
+                user_name = input("Enter your user name>> ")
+                continue
     
     def create_user(self, user_name: str):
-        self.db.create_user(user_name=user_name)
-        self.user = User(configs=self.configs, db=self.db, user_name=user_name)
-        self.chat = Chat(user=self.user, db=self.db, configs=self.configs)
-        self.logger.info(f"Created user {user_name}.")
+        while True:
+            try:
+                self.db.create_user(user_name=user_name)
+                self.user = User(configs=self.configs, db=self.db, user_name=user_name)
+                self.chat = Chat(user=self.user, db=self.db, configs=self.configs)
+                self.logger.info(f"Created user {user_name}.")
+                return
+            except UserAlreadyExistsError as e:
+                self.logger.error(f"User already exists: {e}")
+                user_name = input("Select a user name>> ")
+                continue
 
+    # checks to see if user attached a tool to the prompt with --<tool>
+    def _parse_prompt(self, prompt: str) -> tuple[str, Tool | None]:
+        if "--" not in prompt:
+            return prompt, None
+        prompt, tool_name = (part.strip() for part in prompt.split("--", 1))
+        if tool_name not in self.tool_client.tool_names:
+            self.logger.error(f"Tool name not found: {tool_name}")
+            return prompt, None
+        return prompt, self.tool_client.tool_chain[tool_name]
+        
     def process_prompt(self, prompt: str) -> str:
+        prompt, tool = self._parse_prompt(prompt)
         self.chat.add_message(Message(role="user", content=prompt))
-        response = self.llm_client.send_request(messages=self.chat.messages)
+        response = self.llm_client.send_request(messages=self.chat.messages, tool=tool)
         response_message = self.llm_client.get_messsage(response=response)
 
         # Check if the model called a tool:

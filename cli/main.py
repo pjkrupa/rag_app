@@ -56,39 +56,12 @@ if __name__ == "__main__":
                 break
             case _:
                 print("Not a valid selection.")
+                continue
     
     print("-" * 50)
     print("-" * 50)
     print("Ready for prompt.\n")
     while True:
+        print(f"Available tools: {orchestrator.tool_client.tool_names}. Attach to end of prompt with --tool_name to call.")
         response = orchestrator.process_prompt(prompt=input("\n>> "))
         logger.info(f"Assistant: {response}")
-
-    # chat = Chat(configs=configs)
-    # tools = [Tool(type="function", function=FunctionDefinition.model_validate(tool)) for tool in TOOLS]
-    # llm_client = LlmClient(configs=configs, tools=tools)
-    # tool_client = ToolHandler(configs=configs, tools=tools)
-
-    # while True:
-    #     prompt_message = Message(role="user", content=input("Give me a prompt--> "))
-    #     logger.info(f"\nUser: {prompt_message}")
-    #     chat.add_message(prompt_message)
-    #     response = llm_client.send_request(messages=chat.messages)
-    #     response_message = llm_client.get_messsage(response=response)
-
-    #     # Check if the model called a tool:
-    #     if response_message.tool_calls:
-    #         # call the tool and get the result as a Message...
-    #         tool_message = tool_client.handle(response_message)
-    #         # ... add the message to the chat
-    #         chat.add_message(tool_message)
-    #         # ... and resend the chat to the LLM:
-    #         tool_response = llm_client.send_request(messages=chat.messages)
-
-    #         # then pull the message from the response, add it to the chat, and deliver it to the user.
-    #         final_response_message = llm_client.get_messsage(response=tool_response)
-    #         chat.add_message(final_response_message)
-    #         logger.info(f"\nAssistant: {final_response_message.content}\n")
-    #     else:
-    #         chat.add_message(response_message)
-    #         logger.info(f"\nAssistant: {response_message.content}\n")

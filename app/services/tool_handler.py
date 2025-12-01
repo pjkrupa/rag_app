@@ -1,17 +1,22 @@
 import json
 from app.core.config import Configurations
-from app.models import Tool, Message
+from app.models import Tool, Message, FunctionDefinition
 from app.services.rag import RagClient
+from app.tools.registry import TOOLS
 
 class ToolHandler:
 
-    def __init__(self, configs: Configurations, tools: list[Tool]):
+    def __init__(self, configs: Configurations):
         self.configs = configs
-        self.tools = tools
-        self.tool_names = [tool.function.name for tool in tools]
+        self.tool_chain = self._make_tool_chain(TOOLS=TOOLS)
+        self.tool_names = list(self.tool_chain.keys())
         self.logger = configs.logger
-        self.rag = RagClient(configs, tools)
+        self.rag = RagClient(configs)
 
+    def _make_tool_chain(self, TOOLS: list[dict]) -> dict[str:Tool]:
+        tools = [Tool(type="function", function=FunctionDefinition.model_validate(tool)) for tool in TOOLS]
+        return {tool.function.name: tool for tool in tools}
+    
     def handle(self, message: Message):
         for tool_call in message.tool_calls:
 

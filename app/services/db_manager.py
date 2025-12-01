@@ -2,6 +2,7 @@ import sqlite3
 import time
 from app.core.config import Configurations
 from typing import TYPE_CHECKING
+from app.core.errors import *
 
 if TYPE_CHECKING:
     from app.services.chat import Chat   # type-checking only, no runtime import
@@ -52,6 +53,8 @@ class DatabaseManager:
         """
         inserts a user into the users table.
         """
+        if self.check_user(user_name=user_name):
+            raise UserAlreadyExistsError(f"User {user_name} already exists in the database")
         created_at = int(time.time())
         cursor = self.conn.cursor()
         cursor.execute(

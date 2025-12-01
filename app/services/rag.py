@@ -7,7 +7,7 @@ from app.services.embeddings import EmbeddingsClient
 
 class RagClient:
 
-    def __init__(self, configs: Configurations, tools: list[Tool]):
+    def __init__(self, configs: Configurations):
         self.configs = configs
         self.emb_client = EmbeddingsClient(configs=configs)
 

@@ -7,6 +7,7 @@ from app.services.user import User
 from app.services.embeddings import EmbeddingsClient
 from app.services.llm_client import LlmClient
 from app.services.tool_handler import ToolHandler
+import app.services.tool_handler as toolhandler_module
 from app.services.db_manager import DatabaseManager
 from app.models import *
 
@@ -40,6 +41,7 @@ MOCK_TOOLS = [
 ]
 
 mock_tools = [Tool(type="function", function=FunctionDefinition.model_validate(tool)) for tool in MOCK_TOOLS]
+mock_tool_chain = {tool.function.name: tool for tool in mock_tools}
 
 mock_logger = logging.getLogger(name="mock_logger")
 mock_logger.setLevel(level=logging.INFO)
@@ -61,7 +63,8 @@ mock_configs = Configurations(
 
 @pytest.fixture
 def tools_client():
-    return ToolHandler(configs=mock_configs, tools=mock_tools)
+    with patch.object(toolhandler_module, "TOOLS", MOCK_TOOLS):
+        yield ToolHandler(configs=mock_configs)
 
 def test_tools_client_handle_undefined_tool(tools_client):
     fake_function_call = FunctionCall(name="fake_tool", arguments=json.dumps({"query_text": "test query text"}))
