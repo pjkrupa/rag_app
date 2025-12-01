@@ -19,11 +19,3 @@ class User:
             self.logger.warning(f"User {self.name} not found in the database.")
             raise UserNotFoundError(f"User {self.name} not found in the database.")
         return user_id
-
-# pattern for instantiating a user:
-#             
-# try:
-#     user = User(configs, db, "john_doe")
-# except UserNotFoundError as e:
-#     # Handle the missing user case
-#     print(f"Error: {e}")

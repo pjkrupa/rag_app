@@ -1,5 +1,5 @@
 import sqlite3
-from uuid import uuid4
+import time
 from app.core.config import Configurations
 from typing import TYPE_CHECKING
 
@@ -25,7 +25,7 @@ class DatabaseManager:
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY,
             user_name TEXT UNIQUE,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            created_at INTEGER
             )
         """)
     
@@ -40,6 +40,8 @@ class DatabaseManager:
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER,
             messages TEXT,
+            created_at INTEGER,
+            updated_at INTEGER,
             FOREIGN KEY (user_id)
                 REFERENCES users(id)
                 ON DELETE CASCADE
@@ -50,13 +52,14 @@ class DatabaseManager:
         """
         inserts a user into the users table.
         """
+        created_at = int(time.time())
         cursor = self.conn.cursor()
         cursor.execute(
             """
-            INSERT INTO users (user_name)
-            VALUES (?)
+            INSERT INTO users (user_name, created_at)
+            VALUES (?, ?)
             """,
-            (user_name,)
+            (user_name, created_at)
         )
 
     def check_user(self, user_name: str):
@@ -85,13 +88,14 @@ class DatabaseManager:
         """
         instantiates a new chat record, returning the chat id.
         """
+        created_at = int(time.time())
         cursor = self.conn.cursor()
         cursor.execute(
                 """
-                INSERT INTO chats (user_id, messages)
-                VALUES (?, ?)
+                INSERT INTO chats (user_id, messages, created_at)
+                VALUES (?, ?, ?)
                 """,
-                (user_id, messages_blob)
+                (user_id, messages_blob, created_at)
             )
         self.conn.commit()
         return cursor.lastrowid
@@ -100,15 +104,16 @@ class DatabaseManager:
         """
         saves an existing chat to the SQLite database
         """
+        updated_at = int(time.time())
         messages_blob = chat.dump_to_blob()
         cursor = self.conn.cursor()
         cursor.execute(
             """
             UPDATE chats
-            SET messages = ?
+            SET messages = ?, updated_at = ?
             WHERE id = ?
             """,
-            (messages_blob, chat.chat_id)
+            (messages_blob, updated_at, chat.chat_id)
         )
 
         self.conn.commit()
