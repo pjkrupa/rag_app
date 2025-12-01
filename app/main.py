@@ -38,6 +38,7 @@ if __name__ == "__main__":
 
     while True:
         prompt_message = Message(role="user", content=input("Give me a prompt--> "))
+        logger.info(f"\nUser: {prompt_message}")
         chat.add_message(prompt_message)
         response = llm_client.send_request(messages=chat.messages)
         response_message = llm_client.get_messsage(response=response)

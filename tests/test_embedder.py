@@ -1,13 +1,7 @@
-from app.tools.registry import TOOLS
-import pytest, logging,json
+import pytest, logging
 from unittest.mock import patch, MagicMock
 from app.core.config import Configurations
-from app.services.chat import Chat
-from app.services.user import User
 from app.services.embeddings import EmbeddingsClient
-from app.services.llm_client import LlmClient
-from app.services.tool_handler import ToolHandler
-from app.services.db_manager import DatabaseManager
 from app.models import *
 
 MOCK_TOOLS = [
@@ -57,22 +51,17 @@ mock_configs = Configurations(
         rerank_top_n=3,
         sqlite_path="test.db"
     )
-# write some tests to validate the tools included in TOOLS... JSON schema, structure, etc.
 
 @pytest.fixture
-def tools_client():
-    return ToolHandler(configs=mock_configs, tools=mock_tools)
+def embeder():
+    return EmbeddingsClient(configs=mock_configs)
 
-def test_tools_client_handle_undefined_tool(tools_client):
-    fake_function_call = FunctionCall(name="fake_tool", arguments=json.dumps({"query_text": "test query text"}))
-    fake_tool_call = ToolCall(id="1234", type="function", function=fake_function_call)
-    fake_message = Message(role="user", content="test content", tool_calls=[fake_tool_call])
-    message = tools_client.handle(fake_message)
-    assert message.content == "Tool not found."
-
-def test_tools_client_handle_nonexistent_tool(tools_client):
-    fake_function_call = FunctionCall(name="nonexistent_tool", arguments=json.dumps({"query_text": "test query text"}))
-    fake_tool_call = ToolCall(id="1234", type="function", function=fake_function_call)
-    fake_message = Message(role="user", content="test content", tool_calls=[fake_tool_call])
-    message = tools_client.handle(fake_message)
-    assert message.content == "There is no tool with that name."
+def test_embedder_output(embeder):
+    fake_embedding = [0.1, 0.2, 0.3]
+    mock_resp = MagicMock()
+    mock_resp.raise_for_status.return_value = None
+    mock_resp.json.return_value = {"embedding": fake_embedding}
+    mock_resp.status_code = 200
+    with patch("app.services.embeddings.requests.post", return_value=mock_resp):
+        result = embeder.embed("test text")
+    assert result == fake_embedding
