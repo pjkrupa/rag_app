@@ -96,7 +96,7 @@ class DatabaseManager:
         self.conn.commit()
         return cursor.lastrowid
     
-    def save_chat(self, chat: "Chat") -> int:
+    def save_chat(self, chat: "Chat"):
         """
         saves an existing chat to the SQLite database
         """
@@ -108,7 +108,7 @@ class DatabaseManager:
             SET messages = ?
             WHERE id = ?
             """,
-            (messages_blob, chat.id)
+            (messages_blob, chat.chat_id)
         )
 
         self.conn.commit()
