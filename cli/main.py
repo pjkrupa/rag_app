@@ -46,5 +46,7 @@ if __name__ == "__main__":
     print("Ready for prompt.\n")
     while True:
         print(f"\nAvailable tools: {orchestrator.tool_client.tool_names}. Attach to end of prompt with --tool_name to call.")
-        response = orchestrator.process_prompt(prompt=input("\n>> "))
-        logger.info(f"Assistant: {response}")
+        response, documents = orchestrator.process_prompt(prompt=input("\n>> "))
+        print(f"Assistant: {response.content}")
+        if documents:
+            logger.info(documents)

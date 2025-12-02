@@ -3,6 +3,7 @@ from app.core.config import Configurations
 from app.models import Tool, Message, FunctionDefinition
 from app.services.rag import RagClient
 from app.tools.registry import TOOLS
+from app.models import ChromaDbResult
 
 class ToolHandler:
 
@@ -17,7 +18,7 @@ class ToolHandler:
         tools = [Tool(type="function", function=FunctionDefinition.model_validate(tool)) for tool in TOOLS]
         return {tool.function.name: tool for tool in tools}
     
-    def handle(self, message: Message):
+    def handle(self, message: Message) -> tuple[Message, list[ChromaDbResult]]:
         for tool_call in message.tool_calls:
 
             if tool_call.function.name not in self.tool_names:

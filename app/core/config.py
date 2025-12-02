@@ -15,7 +15,7 @@ class Configurations:
     rerank_top_n: int
     sqlite_path: str
 
-def set_configs(self, logger: Logger):
+def set_configs(logger: Logger):
     configs = Configurations(
         model=os.getenv("MODEL"),
         ollama_api_base=os.getenv("OLLAMA_URL"),

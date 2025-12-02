@@ -52,7 +52,7 @@ class Orchestrator:
             return prompt, None
         return prompt, self.tool_client.tool_chain[tool_name]
         
-    def process_prompt(self, prompt: str) -> str:
+    def process_prompt(self, prompt: str) -> tuple[Message, list[ChromaDbResult]]:
         prompt, tool = self._parse_prompt(prompt)
         self.chat.add_message(Message(role="user", content=prompt))
         response = self.llm_client.send_request(messages=self.chat.messages, tool=tool)
@@ -60,8 +60,8 @@ class Orchestrator:
 
         # Check if the model called a tool:
         if response_message.tool_calls:
-            # call the tool and get the result as a Message...
-            tool_message = self.tool_client.handle(response_message)
+            # call the tool and get the result as a Message, plus a list of ChromaDbResult objects...
+            tool_message, documents = self.tool_client.handle(response_message)
             # ... add the message to the chat
             self.chat.add_message(tool_message)
             # ... and resend the chat to the LLM:
@@ -70,7 +70,7 @@ class Orchestrator:
             # then pull the message from the response, add it to the chat, and deliver it to the user.
             final_response_message = self.llm_client.get_messsage(response=tool_response)
             self.chat.add_message(final_response_message)
-            return final_response_message.content
+            return final_response_message, documents
         else:
             self.chat.add_message(response_message)
-            return response_message.content
+            return response_message, None
