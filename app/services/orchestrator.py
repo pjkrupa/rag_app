@@ -18,6 +18,10 @@ class Orchestrator:
         self.llm_client = LlmClient(configs=configs)
         self.tool_client = ToolHandler(configs=configs)
 
+    def default_user(self,):
+        self.user = User(configs=self.configs, db=self.db, user_name="peter")
+        self.chat = Chat(user=self.user, db=self.db, configs=self.configs)
+
     def get_user_name(self, user_name: str):
         while True:
             try:
@@ -52,7 +56,7 @@ class Orchestrator:
             return prompt, None
         return prompt, self.tool_client.tool_chain[tool_name]
         
-    def process_prompt(self, prompt: str) -> tuple[Message, list[ChromaDbResult]]:
+    def process_prompt(self, prompt: str) -> tuple[Message, list[ChromaDbResult] | None]:
         prompt, tool = self._parse_prompt(prompt)
         self.chat.add_message(Message(role="user", content=prompt))
         response = self.llm_client.send_request(messages=self.chat.messages, tool=tool)
@@ -67,7 +71,8 @@ class Orchestrator:
             # ... and resend the chat to the LLM:
             tool_response = self.llm_client.send_request(messages=self.chat.messages)
 
-            # then pull the message from the response, add it to the chat, and deliver it to the user.
+            # then pull the message from the response, add it to the chat, and deliver it to the user,
+            # along with the documents/metadata returned by the RAG client.
             final_response_message = self.llm_client.get_messsage(response=tool_response)
             self.chat.add_message(final_response_message)
             return final_response_message, documents

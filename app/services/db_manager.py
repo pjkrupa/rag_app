@@ -11,7 +11,7 @@ class DatabaseManager:
 
     def __init__(self, configs: Configurations):
         self.configs = configs
-        self.conn = sqlite3.connect(self.configs.sqlite_path)
+        self.conn = sqlite3.connect(self.configs.sqlite_path, check_same_thread=False)
         self.conn.execute("PRAGMA foreign_keys = ON;")
         self._create_users_table()
         self._create_chats_table()
