@@ -6,30 +6,47 @@ from app.models import ChromaDbResult
 class EmbeddingsClient:
     def __init__(self, configs: Configurations):
         self.configs = configs
-    
+        self.logger = configs.logger
+
     @handle_api_errors(default=[])
     def embed(self, text: str) -> list[float]:
         """
         Hits embeddings API to return vector embeddings 
         """
-        logger = self.configs.logger
         start = time.time()
 
+        url = f"{self.configs.embeddings_url}/embeddings"
+
         resp = requests.post(
-            f"{self.configs.embeddings_url}/embeddings",
+            url,
             json={"text": text},
             timeout=20
         )
         resp.raise_for_status()
 
         data = resp.json()
+        self.logger.debug(self.logger.debug(
+            "Request: %s %s | headers=%s | body=%s",
+            resp.request.method,
+            resp.request.url,
+            dict(resp.request.headers),
+            resp.request.body,
+            )
+        )
+        self.logger.debug(
+            "POST %s | status=%s | headers=%s | body=%s",
+            url,
+            resp.status_code,
+            resp.headers.get("Content-Type"),
+            resp.text[:500]
+            )
+        
         embedding = data.get("embedding", [])
 
-        logger.info("-" * 50)
-        logger.info("Successfully fetched embedding.")
-        logger.info(f"RESPONSE TIME: {time.time() - start:.3f}s")
-        logger.info(f"EMBED FETCH STATUS: {resp.status_code}")
-
+        self.logger.info("Successfully fetched embedding.")
+        self.logger.info(f"RESPONSE TIME: {time.time() - start:.3f}s")
+        self.logger.info(f"EMBED FETCH STATUS: {resp.status_code}")
+        self.logger.debug(f"Embedding returned by embeddings.embed: {embedding}")
         return embedding
 
     def _build_rerank_payload(self, query_text: str, results: list[ChromaDbResult]) -> dict:
@@ -73,10 +90,8 @@ class EmbeddingsClient:
             timeout=20
         )
 
-        logger.info("-" * 50)
         logger.info("Successfully reranked.")
         logger.info(f"RESPONSE TIME: {time.time() - start:.3f}s")
         logger.info(f"RERANK STATUS: {resp.status_code}")
-        logger.info("-" * 50)
 
         return resp.json()

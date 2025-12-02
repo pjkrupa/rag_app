@@ -12,6 +12,15 @@ class ChatNotFoundError(Exception):
     """Raised when a chat is not found in the database"""
     pass
 
+class ToolParseError(Exception):
+    pass
+
+class LlmCallFailedError(Exception):
+    pass
+
+class RagClientFailedError(Exception):
+    pass
+
 # a wrapper that handles errors and logs them.
 def handle_api_errors(default):
     def decorator(func):
