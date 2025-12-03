@@ -1,9 +1,6 @@
 from app.services.db_manager import DatabaseManager
 from app.core.config import Configurations
-
-class UserNotFoundError(Exception):
-    """Raised when a user is not found in the database"""
-    pass
+from app.core.errors import UserNotFoundError
 
 class User:
     def __init__(self, configs: Configurations, db: DatabaseManager, user_name: str):

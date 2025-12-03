@@ -32,10 +32,10 @@ if __name__ == "__main__":
             continue
         match selection:
             case 1:
-                orchestrator.get_user_name(user_name=input("Enter your user name>> "))
+                orchestrator.cli_get_user_name(user_name=input("Enter your user name>> "))
                 break
             case 2:
-                orchestrator.create_user(user_name=input("Select a user name>> "))
+                orchestrator.cli_create_user(user_name=input("Select a user name>> "))
                 break
             case _:
                 print("Not a valid selection.")

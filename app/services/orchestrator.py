@@ -19,10 +19,14 @@ class Orchestrator:
         self.tool_client = ToolHandler(configs=configs)
 
     def default_user(self,):
-        self.user = User(configs=self.configs, db=self.db, user_name="peter")
+        try:
+            self.db.create_user(user_name="default")
+        except UserAlreadyExistsError as e:
+            self.logger.info(f"Default user already exists, starting session...")
+        self.user = User(configs=self.configs, db=self.db, user_name="default")
         self.chat = Chat(user=self.user, db=self.db, configs=self.configs)
 
-    def get_user_name(self, user_name: str):
+    def cli_get_user_name(self, user_name: str):
         while True:
             try:
                 self.user = User(configs=self.configs, db=self.db, user_name=user_name)
@@ -33,7 +37,7 @@ class Orchestrator:
                 user_name = input("Enter your user name>> ")
                 continue
     
-    def create_user(self, user_name: str):
+    def cli_create_user(self, user_name: str):
         while True:
             try:
                 self.db.create_user(user_name=user_name)
@@ -65,10 +69,14 @@ class Orchestrator:
         # call the tool (RAG client), get: 
         #   1) the message to return to the LLM, 
         #   2) the documents returned by the RAG client
+        for tool_call in response_message.tool_calls:
+            self.logger.info(f"Tool call! name: {tool_call.function.name}, arguments: {tool_call.function.arguments}")
         try:
             tool_message, documents = self.tool_client.handle(response_message)
         except RagClientFailedError as e:
             return self._fail(f"RAG client failed: {e}")
+        self.logger.info(tool_message)
+        self.logger.info(documents)
 
         self.chat.add_message(tool_message)
 
@@ -95,6 +103,7 @@ class Orchestrator:
             )
         self.chat.add_message(Message(role="user", content=prompt))
         
+        self.logger.info(f"User: {prompt}")
         # intial call to the LLM
         try:
             response = self.llm_client.send_request(messages=self.chat.messages, tool=tool)
@@ -104,6 +113,7 @@ class Orchestrator:
         
         if not response_message.tool_calls:
             self.chat.add_message(response_message)
+            self.logger.info(f"Assistant: {response_message.content}")
             return response_message, None
 
         return self._run_tool_flow(response_message)

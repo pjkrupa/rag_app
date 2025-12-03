@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Chat</title>
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+
+    <style>
+        body { font-family: sans-serif; margin: 2rem; }
+        #chat-box { 
+            border: 1px solid #ccc; 
+            padding: 1rem; 
+            margin-bottom: 1rem; 
+            min-height: 200px; 
+        }
+        .msg { margin-bottom: 1rem; }
+        .user { font-weight: bold; color: #005; }
+        .assistant { font-weight: bold; color: #500; }
+        .htmx-indicator {display: none;}
+        .htmx-request .htmx-indicator {display: block;}
+    </style>
+</head>
+
+<body>
+
+<h2>Chat</h2>
+
+<div id="status" style="margin-bottom: 1rem; color: gray;" class="htmx-indicator">Working…</div>
+
+<!-- The chat box will be replaced without reloading the page -->
+<div id="chat-box">
+    {% include "chat-box.html" %}
+</div>
+
+</body>
+</html>

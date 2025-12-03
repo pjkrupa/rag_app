@@ -11,17 +11,24 @@ class DatabaseManager:
 
     def __init__(self, configs: Configurations):
         self.configs = configs
-        self.conn = sqlite3.connect(self.configs.sqlite_path, check_same_thread=False)
-        self.conn.execute("PRAGMA foreign_keys = ON;")
-        self._create_users_table()
-        self._create_chats_table()
-        self._create_messages_table()
+        self._init_db()
     
-    def _create_users_table(self):
+    def _init_db(self):
+        """ Run DB setup once, using a temporary connection """
+        with self._get_conn() as conn:
+            conn.execute("PRAGMA foreign_keys = ON;")
+            self._create_users_table(conn)
+            self._create_chats_table(conn)
+            self._create_messages_table(conn)
+
+    def _get_conn(self):
+        return sqlite3.connect(self.configs.sqlite_path, check_same_thread=False)
+
+    def _create_users_table(self, conn):
         """
         creates the users table for the first time
         """
-        cursor = self.conn.cursor()
+        cursor = conn.cursor()
         cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS users (
@@ -31,11 +38,11 @@ class DatabaseManager:
             )
         """)
     
-    def _create_chats_table(self):
+    def _create_chats_table(self, conn):
         """
         creates chats table for the first time 
         """
-        cursor = self.conn.cursor()
+        cursor = conn.cursor()
         cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS chats (
@@ -50,11 +57,11 @@ class DatabaseManager:
         """
         )
 
-    def _create_messages_table(self):
+    def _create_messages_table(self, conn):
         """
         creates a table where the messages and associated documents are stored
         """
-        cursor = self.conn.cursor()
+        cursor = conn.cursor()
         cursor.execute(
         """
         CREATE TABLE IF NOT EXISTS messages (
@@ -69,43 +76,49 @@ class DatabaseManager:
             )
         """
         )
-    
-        
+
+    #---------------------#
+    ### CRUD operations ###
+    #---------------------#
+
     def create_user(self, user_name):
         """
         inserts a user into the users table.
         """
-        if self.check_user(user_name=user_name):
-            raise UserAlreadyExistsError(f"User {user_name} already exists in the database")
-        created_at = int(time.time())
-        cursor = self.conn.cursor()
-        cursor.execute(
-            """
-            INSERT INTO users (user_name, created_at)
-            VALUES (?, ?)
-            """,
-            (user_name, created_at)
-        )
+        with self._get_conn() as conn:
+            cursor = conn.cursor()
+
+            if self.check_user(user_name=user_name):
+                raise UserAlreadyExistsError(f"User {user_name} already exists in the database")
+            created_at = int(time.time())
+            cursor.execute(
+                """
+                INSERT INTO users (user_name, created_at)
+                VALUES (?, ?)
+                """,
+                (user_name, created_at)
+            )
 
     def check_user(self, user_name: str):
         """
         verifies user name, returns id
         """
-        cursor = self.conn.cursor()
-        cursor.execute(
-            """
-            SELECT id
-            FROM users
-            WHERE user_name = ?
-            """,
-            (user_name,)
-        )
+        with self._get_conn() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT id
+                FROM users
+                WHERE user_name = ?
+                """,
+                (user_name,)
+            )
 
-        row = cursor.fetchone()
+            row = cursor.fetchone()
 
-        # add error handling/logging here
-        if row is None:
-            return None  # no user with that name
+            # add error handling/logging here
+            if row is None:
+                return None  # no user with that name
 
         return row[0]
 
@@ -115,16 +128,17 @@ class DatabaseManager:
         instantiates a new chat record, returning the chat id.
         """
         created_at = int(time.time())
-        cursor = self.conn.cursor()
-        cursor.execute(
-                """
-                INSERT INTO chats (user_id, created_at)
-                VALUES (?, ?)
-                """,
-                (user_id, created_at)
-            )
-        self.conn.commit()
-        chat_id = cursor.lastrowid
+        with self._get_conn() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                    """
+                    INSERT INTO chats (user_id, created_at)
+                    VALUES (?, ?)
+                    """,
+                    (user_id, created_at)
+                )
+            conn.commit()
+            chat_id = cursor.lastrowid
         self.insert_message(chat_id=chat_id, message=init_message)
         return chat_id
     
@@ -141,60 +155,42 @@ class DatabaseManager:
         if documents:
             documents = json.dumps([document.model_dump() for document in documents])
         time_stamp = int(time.time())
-        cursor = self.conn.cursor()
-
-        cursor.execute(
-            """
-            INSERT INTO messages (chat_id, message, documents, created_at)
-            VALUES (?, ?, ?, ?)
-            """, (chat_id, message, documents, time_stamp)
-        )
-        cursor.execute(
-            """
-            UPDATE chats
-            SET updated_at = ?
-            WHERE id = ?
-            """, (time_stamp, chat_id)
-        )
-    
-    ## replaced by self.insert_message()
-    # def save_chat(self, chat: "Chat"):
-    #     """
-    #     saves an existing chat to the SQLite database
-    #     """
-    #     updated_at = int(time.time())
-    #     messages_blob = chat.dump_to_blob()
-    #     cursor = self.conn.cursor()
-    #     cursor.execute(
-    #         """
-    #         UPDATE chats
-    #         SET messages = ?, updated_at = ?
-    #         WHERE id = ?
-    #         """,
-    #         (messages_blob, updated_at, chat.chat_id)
-    #     )
-
-    #     self.conn.commit()
+        with self._get_conn() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                INSERT INTO messages (chat_id, message, documents, created_at)
+                VALUES (?, ?, ?, ?)
+                """, (chat_id, message, documents, time_stamp)
+            )
+            cursor.execute(
+                """
+                UPDATE chats
+                SET updated_at = ?
+                WHERE id = ?
+                """, (time_stamp, chat_id)
+            )
+            conn.commit()
 
     def get_messages(self, chat_id: int) -> list[tuple[str, str | None]]:
         """
         gets messages and documents from the SQLite messages table...
         """
-        cursor = self.conn.cursor()
-        cursor.execute(
-            """
-            SELECT message, documents
-            FROM messages
-            WHERE chat_id = ?
-            ORDER BY created_at ASC
-            """,
-            (chat_id,)
-        )
+        with self._get_conn() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT message, documents
+                FROM messages
+                WHERE chat_id = ?
+                ORDER BY created_at ASC
+                """,
+                (chat_id,)
+            )
 
-        rows = cursor.fetchall()
+            rows = cursor.fetchall()
 
-        # add error handling/logging here
-        if not rows:
-            return None  # no chat with that ID
-
+            # add error handling/logging here
+            if not rows:
+                return None  # no chat with that ID
         return rows

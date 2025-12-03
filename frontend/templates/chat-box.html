@@ -1,0 +1,25 @@
+{% for msg in messages %}
+    {% if msg.role in ["user", "assistant"] %}
+        <div class="msg">
+            <div class="{{ msg.role }}">{{ msg.role.capitalize() }}:</div>
+            <div>{{ msg.content or "" }}</div>
+        </div>
+    {% endif %}
+{% endfor %}
+
+<form
+    hx-post="/chat"
+    hx-target="#chat-box"
+    hx-swap="innerHTML"
+    hx-indicator="#status"
+>
+    <input type="hidden" name="chat_id" value="{{ chat_id }}">
+    <textarea 
+    name="prompt" 
+    required 
+    rows="3" 
+    style="width: 100%; font-size: 1rem;"
+></textarea>
+
+    <button type="submit">Send prompt</button>
+</form>
