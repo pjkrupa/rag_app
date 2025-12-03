@@ -1,8 +1,8 @@
-import sqlite3
-import time
+import sqlite3, time, json
 from app.core.config import Configurations
 from typing import TYPE_CHECKING
 from app.core.errors import *
+from app.models import Message, ChromaDbResult
 
 if TYPE_CHECKING:
     from app.services.chat import Chat   # type-checking only, no runtime import
@@ -15,6 +15,7 @@ class DatabaseManager:
         self.conn.execute("PRAGMA foreign_keys = ON;")
         self._create_users_table()
         self._create_chats_table()
+        self._create_messages_table()
     
     def _create_users_table(self):
         """
@@ -40,15 +41,36 @@ class DatabaseManager:
         CREATE TABLE IF NOT EXISTS chats (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER,
-            messages TEXT,
             created_at INTEGER,
             updated_at INTEGER,
             FOREIGN KEY (user_id)
                 REFERENCES users(id)
                 ON DELETE CASCADE
             )
-        """)
+        """
+        )
+
+    def _create_messages_table(self):
+        """
+        creates a table where the messages and associated documents are stored
+        """
+        cursor = self.conn.cursor()
+        cursor.execute(
+        """
+        CREATE TABLE IF NOT EXISTS messages (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            chat_id INTEGER,
+            message TEXT,
+            documents TEXT,
+            created_at INTEGER,
+            FOREIGN KEY (chat_id)
+                REFERENCES chats(id)
+                ON DELETE CASCADE
+            )
+        """
+        )
     
+        
     def create_user(self, user_name):
         """
         inserts a user into the users table.
@@ -87,7 +109,8 @@ class DatabaseManager:
 
         return row[0]
 
-    def create_chat(self, user_id: int, messages_blob: str) -> int:
+    
+    def create_chat(self, user_id: int, init_message: Message) -> int:
         """
         instantiates a new chat record, returning the chat id.
         """
@@ -95,50 +118,83 @@ class DatabaseManager:
         cursor = self.conn.cursor()
         cursor.execute(
                 """
-                INSERT INTO chats (user_id, messages, created_at)
-                VALUES (?, ?, ?)
+                INSERT INTO chats (user_id, created_at)
+                VALUES (?, ?)
                 """,
-                (user_id, messages_blob, created_at)
+                (user_id, created_at)
             )
         self.conn.commit()
-        return cursor.lastrowid
+        chat_id = cursor.lastrowid
+        self.insert_message(chat_id=chat_id, message=init_message)
+        return chat_id
     
-    def save_chat(self, chat: "Chat"):
+
+    def insert_message(
+            self, 
+            chat_id: int, 
+            message: Message, 
+            documents: list[ChromaDbResult] = None):
         """
-        saves an existing chat to the SQLite database
+        inserts a message and associated documents (if present) into the messages table
         """
-        updated_at = int(time.time())
-        messages_blob = chat.dump_to_blob()
+        message = json.dumps(message.model_dump())
+        if documents:
+            documents = json.dumps([document.model_dump() for document in documents])
+        time_stamp = int(time.time())
         cursor = self.conn.cursor()
+
+        cursor.execute(
+            """
+            INSERT INTO messages (chat_id, message, documents, created_at)
+            VALUES (?, ?, ?, ?)
+            """, (chat_id, message, documents, time_stamp)
+        )
         cursor.execute(
             """
             UPDATE chats
-            SET messages = ?, updated_at = ?
+            SET updated_at = ?
             WHERE id = ?
-            """,
-            (messages_blob, updated_at, chat.chat_id)
+            """, (time_stamp, chat_id)
         )
+    
+    ## replaced by self.insert_message()
+    # def save_chat(self, chat: "Chat"):
+    #     """
+    #     saves an existing chat to the SQLite database
+    #     """
+    #     updated_at = int(time.time())
+    #     messages_blob = chat.dump_to_blob()
+    #     cursor = self.conn.cursor()
+    #     cursor.execute(
+    #         """
+    #         UPDATE chats
+    #         SET messages = ?, updated_at = ?
+    #         WHERE id = ?
+    #         """,
+    #         (messages_blob, updated_at, chat.chat_id)
+    #     )
 
-        self.conn.commit()
+    #     self.conn.commit()
 
-    def get_messages(self, chat_id: int) -> str:
+    def get_messages(self, chat_id: int) -> list[tuple[str, str | None]]:
         """
-        gets messages from the SQLite chats table... returns them as a JSON blob
+        gets messages and documents from the SQLite messages table...
         """
         cursor = self.conn.cursor()
         cursor.execute(
             """
-            SELECT messages
-            FROM chats
-            WHERE id = ?
+            SELECT message, documents
+            FROM messages
+            WHERE chat_id = ?
+            ORDER BY created_at ASC
             """,
             (chat_id,)
         )
 
-        row = cursor.fetchone()
+        rows = cursor.fetchall()
 
         # add error handling/logging here
-        if row is None:
+        if not rows:
             return None  # no chat with that ID
 
-        return row[0]
+        return rows

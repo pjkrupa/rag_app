@@ -34,6 +34,7 @@ def test_table_creation(db):
     tables_list = [r[0] for r in cursor.fetchall()]
     assert "users" in tables_list
     assert "chats" in tables_list
+    assert "messages" in tables_list
 
 def test_create_user(db):
     cursor = db.conn.cursor()
@@ -42,16 +43,6 @@ def test_create_user(db):
     row = cursor.fetchone()
     assert row[1] == "test_user"
 
-def test_create_chat(db):
-    mock_message = Message(role='system', content="system prompt")
-    mock_blob = json.dumps([mock_message.model_dump()])
-    cursor = db.conn.cursor()
-    db.create_user("test_user")
-    chat_id = db.create_chat(user_id=1, messages_blob=mock_blob)
-    cursor.execute("SELECT messages FROM chats WHERE id = ?", (chat_id,))
-    row = cursor.fetchone()
-    assert chat_id > 0
-    assert row[0] == mock_blob
     
 def test_check_user_valid(db):
     db.create_user("test_user")
@@ -68,30 +59,24 @@ def test_create_chat(db):
     db.create_user("test_user")
     user_id = db.check_user("test_user")
     mock_message = Message(role='system', content="system prompt")
-    mock_blob = json.dumps([mock_message.model_dump()])
-    db.create_chat(user_id=user_id, messages_blob=mock_blob)
+    mock_blob = json.dumps(mock_message.model_dump())
     cursor = db.conn.cursor()
-    cursor.execute("SELECT * FROM chats")
+    chat_id = db.create_chat(user_id=1, init_message=mock_message)
+    cursor.execute("SELECT message, documents FROM messages WHERE chat_id = ?", (chat_id,))
     row = cursor.fetchone()
-    assert row[0] > 0
-    assert row[1] > 0
-    assert row[2] == mock_blob
+    assert chat_id > 0
+    assert row[0] == mock_blob
+    assert row[1] is None
 
-def test_save_chat(db):
-    # create the user, the message, and the chat
+def test_insert_message(db):
     db.create_user("test_user")
     user = User(configs=mock_configs, db=db, user_name="test_user")
     mock_message = Message(role='system', content="system prompt")
-    mock_blob = json.dumps([mock_message.model_dump()])
-    chat_id = db.create_chat(user_id=user.id, messages_blob=mock_blob)
-    chat = Chat(user=user, db=db, configs=mock_configs, chat_id=chat_id)
-
-    # make an updated message and add it to the chat
+    chat_id = db.create_chat(user_id=user.id, init_message=mock_message)
+    
+    # make an updated message and insert it in the database
     updated_message = Message(role='user', content="updated message")
-    chat.add_message(updated_message)
-
-    # save the updated chat to the database   
-    db.save_chat(chat=chat)
+    db.insert_message(chat_id=chat_id, message=updated_message)
 
     # create test blob
     msgs = [mock_message, updated_message]
@@ -99,9 +84,11 @@ def test_save_chat(db):
     
     # get the updated blob from the database and compare it to test blob
     cursor = db.conn.cursor()
-    cursor.execute("SELECT messages FROM chats")
-    row = cursor.fetchone()
-    assert row[0] == blob
+    cursor.execute("SELECT message FROM messages WHERE chat_id=?", (chat_id,))
+    rows = cursor.fetchall()
+    msg_blob = json.dumps([Message(**json.loads(row[0])).model_dump() for row in rows])
+
+    assert msg_blob == blob
 
 def test_get_messages(db):
     # create the user and the messages
@@ -109,13 +96,13 @@ def test_get_messages(db):
     user = User(configs=mock_configs, db=db, user_name="test_user")
     mock_message = Message(role='system', content="system prompt")
     mock_blob = json.dumps([mock_message.model_dump()])
-    chat_id = db.create_chat(user_id=user.id, messages_blob=mock_blob)
+    chat_id = db.create_chat(user_id=user.id, init_message=mock_message)
 
     # use the method to get the messages from the db
     messages = db.get_messages(chat_id=chat_id)
 
     # get messages to test against
     cursor = db.conn.cursor()
-    cursor.execute("SELECT messages FROM chats WHERE id = ?", (chat_id,))
-    row = cursor.fetchone()
-    assert row[0] == messages
+    cursor.execute("SELECT message, documents FROM messages WHERE id = ?", (chat_id,))
+    rows = cursor.fetchall()
+    assert rows == messages

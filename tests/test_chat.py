@@ -64,7 +64,9 @@ def mock_db():
     db = MagicMock()
     db.create_chat.return_value = 1
     mock_message = Message(role='system', content="system prompt")
-    db.get_messages.return_value = json.dumps([mock_message.model_dump()])
+    db.get_messages.return_value = [
+        (json.dumps(mock_message.model_dump()), None)
+        ]
     return db
 
 @pytest.fixture
