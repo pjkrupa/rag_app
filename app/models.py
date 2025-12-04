@@ -56,6 +56,13 @@ class ChromaDbResult(BaseModel):
     metadata: dict
     distance: float
 
+# -----------------------------
+# Models a message plus the documents from a ChromaDB query, if any
+# -----------------------------
+class MessageDocuments(BaseModel):
+    message: Message
+    documents: list[ChromaDbResult] | None = None
+
 # tracks the current state of a conversation
 class State(BaseModel):
     tokens: int

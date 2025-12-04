@@ -2,7 +2,7 @@ import sqlite3, time, json
 from app.core.config import Configurations
 from typing import TYPE_CHECKING
 from app.core.errors import *
-from app.models import Message, ChromaDbResult
+from app.models import Message, ChromaDbResult, MessageDocuments
 
 if TYPE_CHECKING:
     from app.services.chat import Chat   # type-checking only, no runtime import
@@ -123,7 +123,7 @@ class DatabaseManager:
         return row[0]
 
     
-    def create_chat(self, user_id: int, init_message: Message) -> int:
+    def create_chat(self, user_id: int, init_message: MessageDocuments) -> int:
         """
         instantiates a new chat record, returning the chat id.
         """
@@ -139,21 +139,22 @@ class DatabaseManager:
                 )
             conn.commit()
             chat_id = cursor.lastrowid
-        self.insert_message(chat_id=chat_id, message=init_message)
+        self.insert_message(chat_id=chat_id, msg_docs=init_message)
         return chat_id
     
 
     def insert_message(
             self, 
             chat_id: int, 
-            message: Message, 
-            documents: list[ChromaDbResult] = None):
+            msg_docs: MessageDocuments):
         """
         inserts a message and associated documents (if present) into the messages table
         """
-        message = json.dumps(message.model_dump())
-        if documents:
-            documents = json.dumps([document.model_dump() for document in documents])
+        message = json.dumps(msg_docs.message.model_dump())
+        if msg_docs.documents:
+            documents = json.dumps([document.model_dump() for document in msg_docs.documents])
+        else:
+            documents = None
         time_stamp = int(time.time())
         with self._get_conn() as conn:
             cursor = conn.cursor()

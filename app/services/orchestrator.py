@@ -21,7 +21,7 @@ class Orchestrator:
 
     def _log_configs(self):
         self.logger.debug(f"System prompt: {self.configs.system_prompt}")
-        
+
     def default_user(self,):
         try:
             self.db.create_user(user_name="default")
@@ -93,7 +93,7 @@ class Orchestrator:
         # then pull the message from the response, add it to the chat, and deliver it to the user,
         # along with the documents/metadata returned by the RAG client.
         final_response_message = self.llm_client.get_messsage(response=tool_response)
-        self.chat.add_message(final_response_message)
+        self.chat.add_message(final_response_message, documents)
         return final_response_message, documents
     
     def process_prompt(self, prompt: str) -> tuple[Message, list[ChromaDbResult] | None]:

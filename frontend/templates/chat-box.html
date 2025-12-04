@@ -1,8 +1,16 @@
 {% for msg in messages %}
-    {% if msg.role in ["user", "assistant"] %}
+    {% if msg.message.role in ["user", "assistant"] %}
         <div class="msg">
-            <div class="{{ msg.role }}">{{ msg.role.capitalize() }}:</div>
-            <div>{{ (msg.content or "") | markdown | safe }}</div>
+            <div class="{{ msg.message.role }}">{{ msg.message.role.capitalize() }}:</div>
+            <div>{{ (msg.message.content or "") | markdown | safe }}</div>
+            {% if msg.documents %}
+                <div>
+                    {% for doc in msg.documents %}
+                        {{ doc.document }}
+                        {{ doc.metadata }}
+                    {% endfor %}
+                </div>
+            {% endif %}
         </div>
     {% endif %}
 {% endfor %}

@@ -1,7 +1,7 @@
 import time
 from litellm import completion, RateLimitError, APIError
 from app.core.config import Configurations
-from app.models import Tool, Message, Parameters
+from app.models import Tool, Message, Parameters, MessageDocuments
 from app.core.errors import LlmCallFailedError
 from requests.exceptions import ConnectionError
 
@@ -16,10 +16,11 @@ class LlmClient:
 
     def send_request(
             self, 
-            messages: list[Message],
+            messages: list[MessageDocuments],
             tool: Tool | None = None
         ) -> Message:
 
+        messages = [obj.message for obj in messages]
         max_retries = 5
         backoff = 2
 
