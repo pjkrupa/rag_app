@@ -16,8 +16,9 @@
         .msg { margin-bottom: 1rem; }
         .user { font-weight: bold; color: #005; }
         .assistant { font-weight: bold; color: #500; }
+
         .htmx-indicator {display: none;}
-        .htmx-request .htmx-indicator {display: block;}
+        .htmx-indicator.htmx-request {display: block;}
     </style>
 </head>
 
@@ -25,12 +26,11 @@
 
 <h2>Chat</h2>
 
-<div id="status" style="margin-bottom: 1rem; color: gray;" class="htmx-indicator">Working…</div>
-
 <!-- The chat box will be replaced without reloading the page -->
 <div id="chat-box">
     {% include "chat-box.html" %}
 </div>
+<div id="status" style="margin-bottom: 1rem; color: gray;" class="htmx-indicator">Working…</div>
 
 </body>
 </html>

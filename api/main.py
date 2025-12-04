@@ -1,3 +1,4 @@
+import markdown
 from fastapi import FastAPI, Form, Request
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
@@ -10,6 +11,11 @@ from app.core.logging_setup import get_logger
 SESSIONS: dict[int, Orchestrator] = {}
 
 templates = Jinja2Templates(directory="./frontend/templates/")
+templates.env.filters["markdown"] = lambda text: markdown.markdown(
+    text,
+    extensions=["fenced_code", "tables"]
+)
+
 logger = get_logger()
 configs = set_configs(logger=logger)
 app = FastAPI()

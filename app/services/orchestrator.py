@@ -17,7 +17,11 @@ class Orchestrator:
         self.chat = None
         self.llm_client = LlmClient(configs=configs)
         self.tool_client = ToolHandler(configs=configs)
+        self._log_configs()
 
+    def _log_configs(self):
+        self.logger.debug(f"System prompt: {self.configs.system_prompt}")
+        
     def default_user(self,):
         try:
             self.db.create_user(user_name="default")

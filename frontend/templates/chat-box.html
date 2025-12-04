@@ -2,7 +2,7 @@
     {% if msg.role in ["user", "assistant"] %}
         <div class="msg">
             <div class="{{ msg.role }}">{{ msg.role.capitalize() }}:</div>
-            <div>{{ msg.content or "" }}</div>
+            <div>{{ (msg.content or "") | markdown | safe }}</div>
         </div>
     {% endif %}
 {% endfor %}
