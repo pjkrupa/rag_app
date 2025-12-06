@@ -216,9 +216,11 @@
             hx-target="#chat-box"
             hx-swap="beforeend"
             hx-indicator="#status"
+            hx-on="htmx:afterRequest: this.reset()"
+            autocomplete="off"
         >
             <input type="hidden" name="chat_id" value="{{ chat_id }}">
-            <textarea name="prompt" rows="3" required></textarea>
+            <textarea name="prompt" rows="3" autocomplete="off" required></textarea>
             <button type="submit">Send</button>
         </form>
 

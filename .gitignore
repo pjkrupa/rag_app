@@ -13,3 +13,4 @@ wheels/
 rag.log
 TODO
 *.db
+test.db
