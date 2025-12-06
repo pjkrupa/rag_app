@@ -36,6 +36,8 @@ async def get_chat(
     logger.debug(f"chat_id_1: {chat_id}")
     return templates.TemplateResponse("chat.html", {
         "request": request,
+        "user_message": None,
+        "llm_message": None,
         "chat_id": chat_id,
         }
     )
@@ -46,15 +48,19 @@ async def post_chat(
     prompt: str = Form(...),
     chat_id: int | None = Form(default=None),
     sm: SessionManager = Depends(get_session_manager)
-        ):    
+        ):
     session = sm.sessions.get(chat_id)
     if session is None:
         return HTMLResponse("Session expired or invalid", status_code=400)
     logger.debug(f"chat_id_4: {chat_id}")
-    message, documents = session.process_prompt(prompt=prompt)
+    user_message = Message(role="user", content=prompt)
+    llm_message, documents = session.process_prompt(prompt=prompt)
+    #TODO: re-factor template to add messages/docs one at a time rather than re-load the whole conversation every time.
     return templates.TemplateResponse("chat-box.html", {
         "request": request,
-        "messages": session.chat.messages,
+        "user_message": user_message,
+        "llm_message": llm_message,
+        "documents": documents,
         "chat_id": chat_id,
         }
     )
