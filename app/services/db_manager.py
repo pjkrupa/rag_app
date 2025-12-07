@@ -22,7 +22,7 @@ class DatabaseManager:
             self._create_messages_table(conn)
 
     def _get_conn(self):
-        return sqlite3.connect(self.configs.sqlite_path, check_same_thread=False)
+        return sqlite3.connect(self.configs.sqlite_path, check_same_thread=False, uri=True)
 
     def _create_users_table(self, conn):
         """
