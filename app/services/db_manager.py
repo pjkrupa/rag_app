@@ -77,6 +77,7 @@ class DatabaseManager:
         """
         )
 
+
     #---------------------#
     ### CRUD operations ###
     #---------------------#

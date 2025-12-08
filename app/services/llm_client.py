@@ -28,8 +28,7 @@ class LlmClient:
             try:
                 params = Parameters(
                         model=self.configs.model, 
-                        messages=messages, 
-                        api_base=self.configs.ollama_api_base, 
+                        messages=messages,
                         tools=[tool] if tool is not None else None,
                         )
                 return completion(**params.model_dump(exclude_none=True))

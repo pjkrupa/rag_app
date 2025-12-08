@@ -18,18 +18,18 @@ def mock_configs():
 
     unique_db = f"file:memdb_{uuid.uuid4().hex}?mode=memory&cache=shared"
 
-    mock_configs = Configurations(
+    configs = ConfigurationsModel(
         model="llama",
-        ollama_api_base="http://localhost:11434",
-        system_prompt="system prompt",
-        logger=mock_logger,
+        api_base="http://localhost:11434",
         chromadb_host="http://localhost",
         chromadb_port=8000,
         embeddings_url="http://localhost:8001",
         chroma_top_n=10,
         rerank_top_n=3,
-        sqlite_path=unique_db
+        sqlite_path=unique_db,
+        system_prompt="system prompt"
     )
+    mock_configs = Configurations.from_model(logger=mock_logger, model=configs)
     return mock_configs
 
 def test_table_creation(mock_configs):

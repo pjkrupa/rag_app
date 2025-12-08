@@ -21,6 +21,9 @@ class LlmCallFailedError(Exception):
 class RagClientFailedError(Exception):
     pass
 
+class ConfigurationsError(Exception):
+    pass
+
 # a wrapper that handles errors and logs them.
 def handle_api_errors(default):
     def decorator(func):

@@ -1,0 +1,12 @@
+model: "ollama_chat/llama3.1:8b"
+api_base: "http://localhost:11434"
+chromadb_host: "localhost"
+chromadb_port: 8000
+chroma_top_n: 10
+rerank_top_n: 3
+embeddings_url: "http://localhost:8001"
+sqlite_path: "test.db"
+system_prompt: |
+  You are a helpful assistant for someone doing research on the General Data Protection Regulation (GDPR).
+  When queried regarding the GDPR, data protection, and privacy, use the gdpr_query tool to gather relevant parts of the text of the regulation and base your answer on them.
+  You decide whether to call gdpr_query. if the user question is not related to the GDPR, do not call the tool. Always format your responses as Markdown for readability.

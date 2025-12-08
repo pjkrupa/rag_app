@@ -1,31 +1,36 @@
-from dataclasses import dataclass
 from logging import Logger
-import os
+import os, yaml
+import litellm
+from app.models import ConfigurationsModel
+from app.core.errors import ConfigurationsError
+from pydantic import ValidationError
 
-@dataclass
 class Configurations:
-    model: str
-    ollama_api_base: str
-    system_prompt: str
-    logger: Logger
-    chromadb_host: str
-    chromadb_port: int
-    embeddings_url: str
-    chroma_top_n: int
-    rerank_top_n: int
-    sqlite_path: str
+    def __init__(self, logger: Logger, yaml_values: ConfigurationsModel):
+        self.logger = logger
+        self.yaml_values = yaml_values
+        litellm.api_base = self.api_base
+        self._set_api_key()
 
-def set_configs(logger: Logger):
-    configs = Configurations(
-        model=os.getenv("MODEL"),
-        ollama_api_base=os.getenv("OLLAMA_URL"),
-        system_prompt=os.getenv("SYSTEM_PROMPT"),
-        logger=logger,
-        chromadb_host=os.getenv("CHROMADB_HOST"),
-        chromadb_port=int(os.getenv("CHROMADB_PORT")),
-        embeddings_url=os.getenv("EMBEDDINGS_URL"),
-        chroma_top_n=int(os.getenv("CHROMA_TOP_N")),
-        rerank_top_n=int(os.getenv("RERANK_TOP_N")),
-        sqlite_path=os.getenv("SQLITE_PATH")
-    )
-    return configs
+    def __getattr__(self, name):
+        return getattr(self.yaml_values, name)
+
+    def _set_api_key(self):
+        is_ollama = self.model.startswith("ollama_chat/")
+        litellm.api_key = None if is_ollama else os.getenv("API_KEY")
+
+    @classmethod
+    def load(cls, logger: Logger, yaml_path: str = os.getenv("CONFIGS_PATH")):
+        with open(yaml_path, "r") as f:
+            data = yaml.safe_load(f)
+        try:
+            yaml_values = ConfigurationsModel(**data)
+        except ValidationError as e:
+            raise ConfigurationsError(f"Invalid configuration: {e}") from e
+
+        return cls(logger, yaml_values)
+    
+    @classmethod
+    def from_model(cls, logger: Logger, configs_model: ConfigurationsModel):
+        """Explicitly construct from a ConfigurationsModel (for testing)."""
+        return cls(logger, configs_model)

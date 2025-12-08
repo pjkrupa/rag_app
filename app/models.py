@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing import Literal, Any
+from logging import Logger
 
 # -----------------------------
 # Function definition
@@ -45,7 +46,6 @@ class Parameters(BaseModel):
     messages: list[Message]
     tools: list[Tool] | None = None
     stream: bool = False
-    api_base: str | None = None
 
 # -----------------------------
 # Models a single result from a ChromaDB query
@@ -62,6 +62,19 @@ class ChromaDbResult(BaseModel):
 class MessageDocuments(BaseModel):
     message: Message
     documents: list[ChromaDbResult] | None = None
+
+
+
+class ConfigurationsModel(BaseModel):
+    model: str
+    api_base: str
+    chromadb_host: str
+    chromadb_port: int
+    embeddings_url: str
+    chroma_top_n: int
+    rerank_top_n: int
+    sqlite_path: str
+    system_prompt: str
 
 # tracks the current state of a conversation
 class State(BaseModel):
