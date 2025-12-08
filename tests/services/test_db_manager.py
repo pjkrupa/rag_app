@@ -29,7 +29,7 @@ def mock_configs():
         sqlite_path=unique_db,
         system_prompt="system prompt"
     )
-    mock_configs = Configurations.from_model(logger=mock_logger, model=configs)
+    mock_configs = Configurations.from_model(logger=mock_logger, configs_model=configs)
     return mock_configs
 
 def test_table_creation(mock_configs):

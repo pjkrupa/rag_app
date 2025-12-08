@@ -20,6 +20,9 @@ class LlmClient:
             tool: Tool | None = None
         ) -> Message:
 
+        start = time.time()
+        self.logger.info(f"Sending request to {self.configs.model}...")
+
         messages = [obj.message for obj in messages]
         max_retries = 5
         backoff = 2
@@ -31,7 +34,10 @@ class LlmClient:
                         messages=messages,
                         tools=[tool] if tool is not None else None,
                         )
-                return completion(**params.model_dump(exclude_none=True))
+                response = completion(**params.model_dump(exclude_none=True))
+                self.logger.info(f"Successfully queried {self.configs.model}.")
+                self.logger.info(f"RESPONSE TIME: {time.time() - start:.3f}s")
+                return response
             
             except RateLimitError as e:
                 if attempt == max_retries:

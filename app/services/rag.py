@@ -2,7 +2,7 @@ import json
 import chromadb
 from app.core.config import Configurations
 from app.core.errors import handle_api_errors, RagClientFailedError
-from app.models import ChromaDbResult, Tool, Message
+from app.models import ChromaDbResult, Message, MessageDocuments
 from app.services.embeddings import EmbeddingsClient
 
 class RagClient:
@@ -12,14 +12,14 @@ class RagClient:
         self.emb_client = EmbeddingsClient(configs=configs)
         self.logger = configs.logger
 
-    def generate(self, query: str, collection: str, tool_call_id: str) -> tuple[Message, list[ChromaDbResult]]:
+    def generate(self, query: str, collection: str, tool_call_id: str) -> MessageDocuments:
         try:
             vec_query = self.emb_client.embed(text=query)
             chroma_docs = self._get_docs(query_embedding=vec_query, collection=collection)
             reranked = self.emb_client.rerank(query_text=query, results=chroma_docs)
             documents = self._filter_results(results=chroma_docs, reranked=reranked["results"])
             json_str = json.dumps([obj.model_dump() for obj in documents])
-            return Message(role='tool', tool_call_id=tool_call_id, content=json_str), documents
+            return MessageDocuments(message=Message(role='tool', tool_call_id=tool_call_id, content=json_str), documents=documents)
         except Exception as e:
             self.logger.error(f"Something went wrong with the RAG: {e}")
             raise RagClientFailedError("The RAG client failed") from e

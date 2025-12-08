@@ -21,7 +21,7 @@ configs = ConfigurationsModel(
         sqlite_path="test.db",
         system_prompt="system prompt"
     )
-mock_configs = Configurations.from_model(logger=mock_logger, model=configs)
+mock_configs = Configurations.from_model(logger=mock_logger, configs_model=configs)
 
 @pytest.fixture
 def llm_client():

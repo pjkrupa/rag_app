@@ -50,7 +50,7 @@ configs = ConfigurationsModel(
         sqlite_path="test.db",
         system_prompt="system prompt"
     )
-mock_configs = Configurations.from_model(logger=mock_logger, model=configs)
+mock_configs = Configurations.from_model(logger=mock_logger, configs_model=configs)
 
 @pytest.fixture
 def mock_user():
@@ -71,12 +71,12 @@ def mock_db():
 
 @pytest.fixture
 def new_chat(mock_db, mock_user):
-    return Chat(configs=mock_configs, db=mock_db, chat_id=None, user=mock_user)
+    return Chat(configs=mock_configs, db=mock_db, chat_id=None, user=mock_user, logger=mock_logger)
 
 # need to add error handling and check it by trying to instantiate a non-existent chat.
 @pytest.fixture
 def existing_chat(mock_db, mock_user):
-    return Chat(configs=mock_configs, db=mock_db, chat_id=2, user=mock_user)
+    return Chat(configs=mock_configs, db=mock_db, chat_id=2, user=mock_user, logger=mock_logger)
 
 def test_chat_instantiate_chat(new_chat):
     assert len(new_chat.messages) == 1

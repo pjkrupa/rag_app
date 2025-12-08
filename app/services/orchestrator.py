@@ -28,13 +28,13 @@ class Orchestrator:
         except UserAlreadyExistsError as e:
             self.logger.info(f"Default user already exists, starting session...")
         self.user = User(configs=self.configs, db=self.db, user_name="default")
-        self.chat = Chat(user=self.user, db=self.db, configs=self.configs)
+        self.chat = Chat(user=self.user, db=self.db, configs=self.configs, logger=self.logger)
 
     def cli_get_user_name(self, user_name: str):
         while True:
             try:
                 self.user = User(configs=self.configs, db=self.db, user_name=user_name)
-                self.chat = Chat(user=self.user, db=self.db, configs=self.configs)
+                self.chat = Chat(user=self.user, db=self.db, configs=self.configs, logger=self.logger)
                 return
             except UserNotFoundError as e:
                 self.logger.error(f"User not found: {e}")
@@ -46,7 +46,7 @@ class Orchestrator:
             try:
                 self.db.create_user(user_name=user_name)
                 self.user = User(configs=self.configs, db=self.db, user_name=user_name)
-                self.chat = Chat(user=self.user, db=self.db, configs=self.configs)
+                self.chat = Chat(user=self.user, db=self.db, configs=self.configs, logger=self.logger)
                 self.logger.info(f"Created user {user_name}.")
                 return
             except UserAlreadyExistsError as e:
@@ -69,20 +69,27 @@ class Orchestrator:
         return Message(role="assistant", content=msg), None
 
     def _run_tool_flow(self, response_message: Message) -> tuple[Message, Tool | None]:
-        
+
+        # add the model's tool_call message to the chat
+        self.chat.add_message(msg_docs=MessageDocuments(message=response_message))
+
         # call the tool (RAG client), get: 
         #   1) the message to return to the LLM, 
         #   2) the documents returned by the RAG client
+        # they will be a list of MessageDocuments objects
         for tool_call in response_message.tool_calls:
             self.logger.info(f"Tool call! name: {tool_call.function.name}, arguments: {tool_call.function.arguments}")
         try:
-            tool_message, documents = self.tool_client.handle(response_message)
+            tool_responses = self.tool_client.handle(response_message)
         except RagClientFailedError as e:
             return self._fail(f"RAG client failed: {e}")
-        self.logger.info(tool_message)
-        self.logger.info(documents)
-
-        self.chat.add_message(tool_message)
+        
+        documents = []
+        for msg_docs in tool_responses:
+            self.logger.info("Tool call added to chat.")
+            self.logger.info(f"tool_call_id: {msg_docs.message.tool_call_id}")
+            documents.extend(msg_docs.documents)
+            self.chat.add_message(msg_docs=msg_docs)
 
         # send the query with the context gathered from the RAG client
         try:
@@ -93,10 +100,11 @@ class Orchestrator:
         # then pull the message from the response, add it to the chat, and deliver it to the user,
         # along with the documents/metadata returned by the RAG client.
         final_response_message = self.llm_client.get_messsage(response=tool_response)
-        self.chat.add_message(final_response_message, documents)
-        return final_response_message, documents
+        msg_docs = MessageDocuments(message=final_response_message, documents=documents)
+        self.chat.add_message(msg_docs)
+        return msg_docs
     
-    def process_prompt(self, prompt: str) -> tuple[Message, list[ChromaDbResult] | None]:
+    def process_prompt(self, prompt: str) -> MessageDocuments:
         # check for tool calling
         try:
             prompt, tool = self._parse_prompt(prompt)
@@ -105,7 +113,7 @@ class Orchestrator:
             Message(role="assistant", content="Sorry, that tool could not be found. Please select a valid tool."),
             None,
             )
-        self.chat.add_message(Message(role="user", content=prompt))
+        self.chat.add_message(MessageDocuments(message=Message(role="user", content=prompt)))
         
         self.logger.info(f"User: {prompt}")
         # intial call to the LLM
@@ -116,7 +124,7 @@ class Orchestrator:
         response_message = self.llm_client.get_messsage(response=response)
         
         if not response_message.tool_calls:
-            self.chat.add_message(response_message)
+            self.chat.add_message(MessageDocuments(message=response_message))
             self.logger.info(f"Assistant: {response_message.content}")
             return response_message, None
 

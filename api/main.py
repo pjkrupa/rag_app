@@ -67,13 +67,14 @@ async def post_chat(
         return HTMLResponse("Session expired or invalid", status_code=400)
     logger.debug(f"chat_id_4: {chat_id}")
     user_message = Message(role="user", content=prompt)
-    llm_message, documents = session.process_prompt(prompt=prompt)
+    msg_docs = session.process_prompt(prompt=prompt)
+    print(type(msg_docs))
     
     return templates.TemplateResponse("chat-box.html", {
         "request": request,
         "user_message": user_message,
-        "llm_message": llm_message,
-        "documents": documents,
+        "llm_message": msg_docs.message,
+        "documents": msg_docs.documents,
         "chat_id": chat_id,
         }
     )
