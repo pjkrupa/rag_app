@@ -40,10 +40,14 @@ class Chat:
     def dump_to_blob(self) -> str:
         return json.dumps([message.model_dump() for message in self.messages])
     
-    def blobs_to_messages(self, messages_docs: list[tuple[str, str | None]]):
+    def blobs_to_msg_docs(self, messages_docs: list[tuple[str, str | None]]) -> list[MessageDocuments]:
         messages = []
-        for blob, _ in messages_docs:
-            messages.append(Message(**json.loads(blob)))
+        for message_blob, documents_blob in messages_docs:
+            msg_docs = MessageDocuments.model_validate({
+            "message": json.loads(message_blob),
+            "documents": json.loads(documents_blob) if documents_blob else None
+            })
+            messages.append(msg_docs)
         return messages
 
     def _load_messages(self):
@@ -51,4 +55,4 @@ class Chat:
         if messages_docs is None:
             self.logger.warning(f"Chat {self.chat_id} not found in the database.")
             raise ChatNotFoundError(f"Chat {self.chat_id} not found in the database.")
-        self.messages = self.blobs_to_messages(messages_docs=messages_docs)
+        self.messages = self.blobs_to_msg_docs(messages_docs=messages_docs)

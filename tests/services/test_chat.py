@@ -4,54 +4,6 @@ from app.services.chat import Chat
 from app.core.config import Configurations
 from app.models import *
 
-MOCK_TOOLS = [
-    {"name": "gdpr_query",
-     "description": "Description of my mock tool.",
-     "parameters": {
-        "type": "object",
-        "properties": {
-            "query_text": {
-                "type": "string",
-                "description": "query string goes here."
-            }
-        },
-    "required": ["query_text"]
-}
-    },
-    {"name": "fake_tool",
-     "description": "Description of my fake tool.",
-     "parameters": {
-        "type": "object",
-        "properties": {
-            "query_text": {
-                "type": "string",
-                "description": "query string goes here."
-            }
-        },
-    "required": ["query_text"]
-}
-    }
-]
-
-mock_tools = [Tool(type="function", function=FunctionDefinition.model_validate(tool)) for tool in MOCK_TOOLS]
-
-mock_logger = logging.getLogger(name="mock_logger")
-mock_logger.setLevel(level=logging.INFO)
-mock_logger.addHandler(logging.StreamHandler())
-
-configs = ConfigurationsModel(
-        model="llama",
-        api_base="http://localhost:11434",
-        chromadb_host="http://localhost",
-        chromadb_port=8000,
-        embeddings_url="http://localhost:8001",
-        chroma_top_n=10,
-        rerank_top_n=3,
-        sqlite_path="test.db",
-        system_prompt="system prompt"
-    )
-mock_configs = Configurations.from_model(logger=mock_logger, configs_model=configs)
-
 @pytest.fixture
 def mock_user():
     user = MagicMock()
@@ -70,20 +22,32 @@ def mock_db():
     return db
 
 @pytest.fixture
-def new_chat(mock_db, mock_user):
-    return Chat(configs=mock_configs, db=mock_db, chat_id=None, user=mock_user, logger=mock_logger)
+def existing_chat(fake_logger, fake_configs, mock_db, mock_user):
+    return Chat(logger=fake_logger, user=mock_user, db=mock_db, configs=fake_configs)
 
-# need to add error handling and check it by trying to instantiate a non-existent chat.
-@pytest.fixture
-def existing_chat(mock_db, mock_user):
-    return Chat(configs=mock_configs, db=mock_db, chat_id=2, user=mock_user, logger=mock_logger)
+def test_fake_db_fixture(db_factory):
+    fake_db = db_factory()
+    with fake_db._get_conn() as conn:
+        cursor = conn.cursor()
+        cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
+        tables_list = [r[0] for r in cursor.fetchall()]
+        assert "users" in tables_list
+        assert "chats" in tables_list
+        assert "messages" in tables_list
 
-def test_chat_instantiate_chat(new_chat):
+def test_chat_instantiate_chat(fake_logger, fake_configs, mock_db, mock_user):
+    new_chat = Chat(logger=fake_logger, user=mock_user, db=mock_db, configs=fake_configs)
     assert len(new_chat.messages) == 1
     assert new_chat.user.id == 1
     assert new_chat.user.name == "user_1"
     
 def test_chat_add_message(existing_chat):
-    message = Message(role="user", content="Content goes here.")
+    message = MessageDocuments(message=Message(role="user", content="Content goes here."))
     existing_chat.add_message(message)
     assert len(existing_chat.messages) == 2
+
+def test_instantiate_chat_with_existing_id(fake_configs, db_factory, fake_logger, mock_user):
+    fake_db = db_factory()
+    chat = Chat(logger=fake_logger, user=mock_user, db=fake_db, configs=fake_configs, chat_id=1)
+    fake_msg_docs = chat.messages[0]
+    assert fake_msg_docs.message.content == "fake prompt"

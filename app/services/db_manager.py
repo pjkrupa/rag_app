@@ -2,7 +2,7 @@ import sqlite3, time, json
 from app.core.config import Configurations
 from typing import TYPE_CHECKING
 from app.core.errors import *
-from app.models import Message, ChromaDbResult, MessageDocuments
+from app.models import MessageDocuments
 
 if TYPE_CHECKING:
     from app.services.chat import Chat   # type-checking only, no runtime import
