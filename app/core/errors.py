@@ -24,6 +24,9 @@ class RagClientFailedError(Exception):
 class ConfigurationsError(Exception):
     pass
 
+class MetadataFilterError(Exception):
+    pass
+
 # a wrapper that handles errors and logs them.
 def handle_api_errors(default):
     def decorator(func):

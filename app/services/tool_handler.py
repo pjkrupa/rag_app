@@ -1,5 +1,6 @@
 import json
 from app.core.config import Configurations
+from app.core.errors import MetadataFilterError, RagClientFailedError
 from app.models import Tool, Message, FunctionDefinition
 from app.services.rag import RagClient
 from app.tools.registry import TOOLS
@@ -31,11 +32,35 @@ class ToolHandler:
             elif tool_call.function.name == "gdpr_query":
                 arguments = json.loads(tool_call.function.arguments)
                 self.logger.info(f"Call for tool {tool_call.function.name}: {arguments}")
-                msg_docs = self.rag.generate( 
-                    query=arguments["query_text"], 
-                    tool_call_id=tool_call.id,
-                    collection="gdpr")
-                tool_messages.append(msg_docs) 
+                try:
+                    msg_docs = self.rag.chroma_query( 
+                        arguments=arguments,
+                        tool_call_id=tool_call.id,
+                        collection="gdpr")
+                except RagClientFailedError as e:
+                    msg_docs = MessageDocuments(
+                        message=Message(
+                            role="tool", tool_call_id=tool_call.id, content=e))
+                tool_messages.append(msg_docs)
+            
+            elif tool_call.function.name == "gdpr_get":
+                arguments = json.loads(tool_call.function.arguments)
+                self.logger.info(f"Call for tool {tool_call.function.name}: {arguments}")
+                try:
+                    msg_docs = self.rag.chroma_get( 
+                        arguments=arguments,
+                        tool_call_id=tool_call.id,
+                        collection="gdpr")
+                except MetadataFilterError as e:
+                    self.logger.error(f"Problem with the metadata filter: {e}")
+                    msg_docs = MessageDocuments(
+                        message=Message(
+                            role="tool", tool_call_id=tool_call.id, content=e))
+                except RagClientFailedError as e:
+                    msg_docs = MessageDocuments(
+                        message=Message(
+                            role="tool", tool_call_id=tool_call.id, content=e))
+                tool_messages.append(msg_docs)
             
             # logs an error if a tool exists but handling hasn't been added yet
             else:

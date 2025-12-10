@@ -45,7 +45,9 @@ async def get_chat(
     session.default_user()
 
     chat_id = session.chat.chat_id
+    session.logger.info(f"chat_id in GET: {chat_id}")
     sm.sessions[chat_id] = session
+    session.logger.info(f"Sessions logged by session manager: {sm.sessions.keys()}")
     
     return templates.TemplateResponse("chat.html", {
         "request": request,
@@ -63,12 +65,12 @@ async def post_chat(
     sm: SessionManager = Depends(get_session_manager)
         ):
     session = sm.sessions.get(chat_id)
+    session.logger.info(f"chad_id in POST: {chat_id}")
     if session is None:
         return HTMLResponse("Session expired or invalid", status_code=400)
     logger.debug(f"chat_id_4: {chat_id}")
     user_message = Message(role="user", content=prompt)
     msg_docs = session.process_prompt(prompt=prompt)
-    print(type(msg_docs))
     
     return templates.TemplateResponse("chat-box.html", {
         "request": request,

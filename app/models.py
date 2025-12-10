@@ -54,7 +54,6 @@ class ChromaDbResult(BaseModel):
     id: str
     document: str
     metadata: dict
-    distance: float
 
 # -----------------------------
 # Models a message plus the documents from a ChromaDB query, if any

@@ -66,7 +66,7 @@ class Orchestrator:
     
     def _fail(self, msg: str):
         self.logger.error(msg)
-        return Message(role="assistant", content=msg), None
+        return MessageDocuments(message=Message(role="assistant", content=msg))
 
     def _run_tool_flow(self, response_message: Message) -> tuple[Message, Tool | None]:
 
@@ -114,8 +114,7 @@ class Orchestrator:
             None,
             )
         self.chat.add_message(MessageDocuments(message=Message(role="user", content=prompt)))
-        
-        self.logger.info(f"User: {prompt}")
+
         # intial call to the LLM
         try:
             response = self.llm_client.send_request(messages=self.chat.messages, tool=tool)
@@ -125,8 +124,7 @@ class Orchestrator:
         
         if not response_message.tool_calls:
             self.chat.add_message(MessageDocuments(message=response_message))
-            self.logger.info(f"Assistant: {response_message.content}")
-            return response_message, None
+            return MessageDocuments(message=response_message)
 
         return self._run_tool_flow(response_message)
         
