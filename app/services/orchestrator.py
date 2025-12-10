@@ -55,14 +55,20 @@ class Orchestrator:
                 continue
 
     # checks to see if user attached a tool to the prompt with --<tool>
-    def _parse_prompt(self, prompt: str) -> tuple[str, Tool | None | str]:
+    def _parse_prompt(self, prompt: str) -> tuple[str, list[Tool] | None ]:
         if "--" not in prompt:
             return prompt, None
-        prompt, tool_name = (part.strip() for part in prompt.split("--", 1))
-        if tool_name not in self.tool_client.tool_names:
-            self.logger.error(f"Tool not found: '{tool_name}'")
-            raise ToolParseError(f"Tool not found: '{tool_name}'")
-        return prompt, self.tool_client.tool_chain[tool_name]
+        prompt_list = prompt.split("--")
+        prompt = prompt_list.pop(0)
+
+        tool_list = []
+        for tool_name in prompt_list:
+            tool_name = tool_name.strip()
+            if tool_name not in self.tool_client.tool_names:
+                self.logger.warning(f"Tool not found: {tool_name}. Skipping.")
+            else:
+                tool_list.append(self.tool_client.tool_chain[tool_name])
+        return prompt, tool_list
     
     def _fail(self, msg: str):
         self.logger.error(msg)
@@ -107,7 +113,7 @@ class Orchestrator:
     def process_prompt(self, prompt: str) -> MessageDocuments:
         # check for tool calling
         try:
-            prompt, tool = self._parse_prompt(prompt)
+            prompt, tools = self._parse_prompt(prompt)
         except ToolParseError:
             return (
             Message(role="assistant", content="Sorry, that tool could not be found. Please select a valid tool."),
@@ -117,7 +123,7 @@ class Orchestrator:
 
         # intial call to the LLM
         try:
-            response = self.llm_client.send_request(messages=self.chat.messages, tool=tool)
+            response = self.llm_client.send_request(messages=self.chat.messages, tools=tools)
         except LlmCallFailedError as e:
             return self._fail(f"LLM call failed: {e}")
         response_message = self.llm_client.get_messsage(response=response)

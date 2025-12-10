@@ -17,7 +17,7 @@ class LlmClient:
     def send_request(
             self, 
             messages: list[MessageDocuments],
-            tool: Tool | None = None
+            tools: list[Tool] | None = None
         ) -> Message:
 
         start = time.time()
@@ -32,7 +32,7 @@ class LlmClient:
                 params = Parameters(
                         model=self.configs.model, 
                         messages=messages,
-                        tools=[tool] if tool is not None else None,
+                        tools=tools if tools is not None else None,
                         )
                 response = completion(**params.model_dump(exclude_none=True))
                 self.logger.info(f"Successfully queried {self.configs.model}.")
