@@ -1,14 +1,12 @@
 import requests, time
 from app.core.config import Configurations
-from app.core.errors import handle_api_errors
-from app.models import ChromaDbResult
+from app.models import ChromaDbResult, RerankItem, RerankResponse
 
 class EmbeddingsClient:
     def __init__(self, configs: Configurations):
         self.configs = configs
         self.logger = configs.logger
 
-    @handle_api_errors(default=[])
     def embed(self, text: str) -> list[float]:
         """
         Hits embeddings API to return vector embeddings 
@@ -57,12 +55,11 @@ class EmbeddingsClient:
             "top_n": self.configs.rerank_top_n
         }
     
-    @handle_api_errors(default={})
     def rerank(
         self,
         query_text: str, 
         results: list[ChromaDbResult],
-        ) -> dict:
+        ) -> RerankResponse:
         """
         Hits an embedding API to run reranking on the ChromaDB results and return the IDs of the top_n query responses.
 
@@ -73,12 +70,7 @@ class EmbeddingsClient:
         logger -> Logger object, Logger
 
         Returns:
-        dict{
-            "results": [
-                {"id": str, "score": float},
-                {"id": str, "score": float}
-            ]
-            }
+        RerankResult object
         """
         logger = self.configs.logger
         endpoint = f"{self.configs.embeddings_url}/reranking"
@@ -94,4 +86,4 @@ class EmbeddingsClient:
         logger.info(f"RESPONSE TIME: {time.time() - start:.3f}s")
         logger.info(f"RERANK STATUS: {resp.status_code}")
 
-        return resp.json()
+        return RerankResponse.model_validate(resp.json())

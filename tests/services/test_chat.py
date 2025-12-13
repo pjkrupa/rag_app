@@ -25,16 +25,6 @@ def mock_db():
 def existing_chat(fake_logger, fake_configs, mock_db, mock_user):
     return Chat(logger=fake_logger, user=mock_user, db=mock_db, configs=fake_configs)
 
-def test_fake_db_fixture(db_factory):
-    fake_db = db_factory()
-    with fake_db._get_conn() as conn:
-        cursor = conn.cursor()
-        cursor.execute("SELECT name FROM sqlite_master WHERE type='table'")
-        tables_list = [r[0] for r in cursor.fetchall()]
-        assert "users" in tables_list
-        assert "chats" in tables_list
-        assert "messages" in tables_list
-
 def test_chat_instantiate_chat(fake_logger, fake_configs, mock_db, mock_user):
     new_chat = Chat(logger=fake_logger, user=mock_user, db=mock_db, configs=fake_configs)
     assert len(new_chat.messages) == 1

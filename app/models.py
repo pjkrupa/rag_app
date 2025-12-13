@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Literal, Any
+from typing import Literal, Any, TypedDict, List
 from logging import Logger
 
 # -----------------------------
@@ -63,7 +63,6 @@ class MessageDocuments(BaseModel):
     documents: list[ChromaDbResult] | None = None
 
 
-
 class ConfigurationsModel(BaseModel):
     model: str
     api_base: str
@@ -75,6 +74,13 @@ class ConfigurationsModel(BaseModel):
     sqlite_path: str
     system_prompt: str
 
-# tracks the current state of a conversation
-class State(BaseModel):
-    tokens: int
+# -----------------------------
+# Models for the API accessed by EmbeddingsClient.rerank
+# -----------------------------
+class RerankItem(BaseModel):
+    id: str
+    score: float
+
+class RerankResponse(BaseModel):
+    query: str
+    results: List[RerankItem]
