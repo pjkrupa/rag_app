@@ -62,6 +62,20 @@ class ToolHandler:
                             role="tool", tool_call_id=tool_call.id, content=e))
                 tool_messages.append(msg_docs)
             
+            elif tool_call.function.name == "edpb_query":
+                arguments = json.loads(tool_call.function.arguments)
+                self.logger.info(f"Call for tool {tool_call.function.name}: {arguments}")
+                try:
+                    msg_docs = self.rag.chroma_query( 
+                        arguments=arguments,
+                        tool_call_id=tool_call.id,
+                        collection="edpb_guidance")
+                except RagClientFailedError as e:
+                    msg_docs = MessageDocuments(
+                        message=Message(
+                            role="tool", tool_call_id=tool_call.id, content=e))
+                tool_messages.append(msg_docs)
+
             # logs an error if a tool exists but handling hasn't been added yet
             else:
                 self.logger.error(f"Tool call for {tool_call.function.name} not handled. Have you added handling for it yet??")

@@ -49,5 +49,27 @@ TOOLS = [
             },
             "required": ["metadata_filter"]
         },
-    }
+    },
+
+    {
+        "name": "edpb_query",
+        "description": (
+            "Runs a semantic vector search against a database of vector embeddings of all the recommendations and guidance issued by the European Data Protection Board. "
+            "Takes a natural-language query and returns the most relevant passages."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query_text": {
+                    "type": "string",
+                    "description": (
+                        "Natural-language query sent to the vector database.\n"
+                        "Example: 'What guidance has the EDPB issued with regard to data minimization?'"
+                    )
+                }
+            },
+            "required": ["query_text"]
+        },
+    },
+
 ]
