@@ -110,6 +110,36 @@ class Orchestrator:
         self.chat.add_message(msg_docs)
         return msg_docs
     
+    #first version without tool calling
+    def process_prompt_streaming(self, prompt: str):
+        prompt, tools = self._parse_prompt(prompt)
+        self.chat.add_message(MessageDocuments(message=Message(role="user", content=prompt)))
+
+        content_parts: list[str] = []
+
+        try:
+            stream = self.llm_client.send_request_stream(messages=self.chat.messages, tools=tools)
+            
+            for chunk in stream:
+                delta = chunk["choices"][0]["delta"]
+
+                if "content" in delta:
+                    token = delta["content"]
+                    if token is not None:
+                        content_parts.append(token)
+                    yield StreamEvent(type="token", content=token)
+            
+            final_message = Message(
+                role="assistant",
+                content="".join(content_parts),
+            )
+            self.chat.add_message(MessageDocuments(message=final_message))
+            yield StreamEvent(type="done")
+
+        except LlmCallFailedError as e:
+            self.logger.error(f"Streaming failed: {e}")
+            yield StreamEvent(type="error", content=str(e))
+
     def process_prompt(self, prompt: str) -> MessageDocuments:
         # check for tool calling
         try:

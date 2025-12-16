@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Literal, Any, TypedDict, List
+from typing import Literal, Any, TypedDict, List, Optional
 from logging import Logger
 
 # -----------------------------
@@ -84,3 +84,10 @@ class RerankItem(BaseModel):
 class RerankResponse(BaseModel):
     query: str
     results: List[RerankItem]
+
+# -----------------------------
+# Model for handling streaming
+# -----------------------------
+class StreamEvent(BaseModel):
+    type: Literal["token", "done", "error"]
+    content: Optional[str] = None

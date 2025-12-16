@@ -1,4 +1,5 @@
 import time
+from collections.abc import Iterator
 from litellm import completion, RateLimitError, APIError
 from app.core.config import Configurations
 from app.models import Tool, Message, Parameters, MessageDocuments
@@ -13,6 +14,38 @@ class LlmClient:
             configs: Configurations):
         self.configs = configs
         self.logger = configs.logger
+
+    def send_request_stream(
+            self, 
+            messages: list[MessageDocuments],
+            tools: list[Tool] | None = None
+        ) -> Iterator[dict]:
+
+        start = time.time()
+        self.logger.info(f"Sending streaming request to {self.configs.model}...")
+        messages = [obj.message for obj in messages]
+
+        params = Parameters(
+            model=self.configs.model,
+            messages=messages,
+            tools=tools if tools is not None else None,
+            stream=True,
+        )
+
+        try:
+            stream = completion(**params.model_dump(exclude_none=True))
+
+            for chunk in stream:
+                yield chunk
+
+            self.logger.info(
+                f"Streaming completed in {time.time() - start:.3f}s"
+            )
+
+        except Exception as e:
+            self.logger.error(f"Streaming LLM error: {e}")
+            raise LlmCallFailedError("Streaming LLM error") from e
+
 
     def send_request(
             self, 
@@ -64,7 +97,6 @@ class LlmClient:
                     backoff = min(backoff * 2, 30)
                     continue
 
-                # Everything else is fatal
                 self.logger.error(f"Unrecoverable API error: {e}")
                 raise LlmCallFailedError("Unrecoverable API error") from e
 
