@@ -27,7 +27,7 @@ class RagClient:
                 raise ValueError("Empty embedding")
             chroma_docs = self._query(query_embedding=vec_query, collection=collection)
             reranked = self.emb_client.rerank(query_text=query, results=chroma_docs)
-            documents = self._filter_results(results=chroma_docs, reranked=reranked.results)
+            documents = self._filter_results(results=chroma_docs, reranked=reranked)
             json_str = json.dumps([obj.model_dump() for obj in documents])
             return MessageDocuments(
                 message=Message(

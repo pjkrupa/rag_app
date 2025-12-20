@@ -40,7 +40,7 @@ class ToolHandler:
                 except RagClientFailedError as e:
                     msg_docs = MessageDocuments(
                         message=Message(
-                            role="tool", tool_call_id=tool_call.id, content=e))
+                            role="tool", tool_call_id=tool_call.id, content=str(e),))
                 tool_messages.append(msg_docs)
             
             elif tool_call.function.name == "gdpr_get":
@@ -55,11 +55,11 @@ class ToolHandler:
                     self.logger.error(f"Problem with the metadata filter: {e}")
                     msg_docs = MessageDocuments(
                         message=Message(
-                            role="tool", tool_call_id=tool_call.id, content=e))
+                            role="tool", tool_call_id=tool_call.id, content=str(e),))
                 except RagClientFailedError as e:
                     msg_docs = MessageDocuments(
                         message=Message(
-                            role="tool", tool_call_id=tool_call.id, content=e))
+                            role="tool", tool_call_id=tool_call.id, content=str(e),))
                 tool_messages.append(msg_docs)
             
             elif tool_call.function.name == "edpb_query":
@@ -73,7 +73,7 @@ class ToolHandler:
                 except RagClientFailedError as e:
                     msg_docs = MessageDocuments(
                         message=Message(
-                            role="tool", tool_call_id=tool_call.id, content=e))
+                            role="tool", tool_call_id=tool_call.id, content=str(e),))
                 tool_messages.append(msg_docs)
 
             # logs an error if a tool exists but handling hasn't been added yet

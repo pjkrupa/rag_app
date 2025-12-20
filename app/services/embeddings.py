@@ -86,4 +86,10 @@ class EmbeddingsClient:
         logger.info(f"RESPONSE TIME: {time.time() - start:.3f}s")
         logger.info(f"RERANK STATUS: {resp.status_code}")
 
-        return RerankResponse.model_validate(resp.json())
+        data = resp.json()
+
+        return RerankResponse(
+            query=query_text,
+            results=data["results"],
+        )
+
