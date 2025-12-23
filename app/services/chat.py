@@ -30,12 +30,14 @@ class Chat:
             self.chat_id = self.db.create_chat(user_id=self.user.id, init_message=init_message)
 
     def add_message(self, msg_docs: MessageDocuments):
+        message_id = self.db.insert_message(chat_id=self.chat_id, msg_docs=msg_docs)
+        msg_docs.id = message_id
         self.messages.append(msg_docs)
         self.logger.info(f"Message added.")
         self.logger.info(f"role: {msg_docs.message.role}")
         self.logger.info(f"content: {msg_docs.message.content}")
         self.logger.info(f"tool_call_id: {msg_docs.message.tool_call_id}")
-        self.db.insert_message(chat_id=self.chat_id, msg_docs=msg_docs)
+        
     
     def dump_to_blob(self) -> str:
         return json.dumps([message.model_dump() for message in self.messages])

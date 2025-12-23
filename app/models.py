@@ -61,6 +61,7 @@ class ChromaDbResult(BaseModel):
 class MessageDocuments(BaseModel):
     message: Message
     documents: list[ChromaDbResult] | None = None
+    id: int | None = None
 
 
 class ConfigurationsModel(BaseModel):

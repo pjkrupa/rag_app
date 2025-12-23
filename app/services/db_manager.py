@@ -165,6 +165,9 @@ class DatabaseManager:
                 VALUES (?, ?, ?, ?)
                 """, (chat_id, message, documents, time_stamp)
             )
+
+            message_id = cursor.lastrowid
+
             cursor.execute(
                 """
                 UPDATE chats
@@ -173,6 +176,8 @@ class DatabaseManager:
                 """, (time_stamp, chat_id)
             )
             conn.commit()
+
+            return message_id
 
     def get_messages(self, chat_id: int) -> list[tuple[str, str | None]]:
         """
