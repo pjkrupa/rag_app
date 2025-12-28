@@ -37,7 +37,7 @@ class Chat:
         self.logger.info(f"role: {msg_docs.message.role}")
         self.logger.info(f"content: {msg_docs.message.content}")
         self.logger.info(f"tool_call_id: {msg_docs.message.tool_call_id}")
-        
+        return message_id
     
     def dump_to_blob(self) -> str:
         return json.dumps([message.model_dump() for message in self.messages])

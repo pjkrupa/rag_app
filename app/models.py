@@ -37,6 +37,7 @@ class Message(BaseModel):
     tool_call_id: str | None = None
     function_call: FunctionCall | None = None
     provider_specific_fields: dict | None = None
+    id: int | None = None
 
 # -----------------------------
 # Brings everything together to formulate the LiteLLM request

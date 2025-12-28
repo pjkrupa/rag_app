@@ -47,7 +47,10 @@ class RagClient:
             collection: str,
             tool_call_id: str
         ) -> MessageDocuments:
+        self.logger.debug(f"Arguments used to call chroma_get(): {arguments}")
         try:
+            if "metadata_filter" not in arguments:
+                arguments = {"metadata_filter": arguments}
             metadata_filter = self._validate_filter(arguments)
         except (ValueError, TypeError) as e:
             self.logger.error(f"Problem with the metadata filter: {e}")

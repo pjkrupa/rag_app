@@ -51,3 +51,6 @@ if __name__ == "__main__":
                 break
             elif event.type == "done":
                 break
+        last_message = orchestrator.last_message()
+        for doc in last_message.documents:
+            print(doc)

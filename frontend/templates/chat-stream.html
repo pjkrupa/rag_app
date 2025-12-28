@@ -1,0 +1,16 @@
+<div class="msg msg-user">
+    <div class="sender">User</div>
+    <div>{{ prompt }}</div>
+</div>
+
+<div class="msg msg-assistant">
+    <div class="sender">Assistant</div>
+<div
+            class="assistant-stream"
+            hx-ext="sse"
+            sse-connect="/chat/stream/{{ chat_id }}/{{ message_id }}"
+            sse-swap="token"
+            hx-swap="beforeend"
+            sse-close="assistant_end"
+        ></div>
+</div>

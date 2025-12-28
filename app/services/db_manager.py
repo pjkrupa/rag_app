@@ -143,6 +143,39 @@ class DatabaseManager:
         self.insert_message(chat_id=chat_id, msg_docs=init_message)
         return chat_id
     
+    def update_message(
+            self,
+            message_id: int,
+            chat_id: int,
+            msg_docs: MessageDocuments
+    ):
+        message = json.dumps(msg_docs.message.model_dump())
+        if msg_docs.documents:
+            documents = json.dumps([document.model_dump() for document in msg_docs.documents])
+        else:
+            documents = None
+        time_stamp = int(time.time())
+        
+        with self._get_conn() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                INSERT INTO messages (chat_id, message, documents)
+                VALUES (?, ?, ?)
+                WHERE id = ?
+                """, (chat_id, message, documents, message_id)
+            )
+
+            message_id = cursor.lastrowid
+
+            cursor.execute(
+                """
+                UPDATE chats
+                SET updated_at = ?
+                WHERE id = ?
+                """, (time_stamp, chat_id)
+            )
+            conn.commit()
 
     def insert_message(
             self, 
@@ -176,7 +209,7 @@ class DatabaseManager:
                 """, (time_stamp, chat_id)
             )
             conn.commit()
-
+            
             return message_id
 
     def get_messages(self, chat_id: int) -> list[tuple[str, str | None]]:

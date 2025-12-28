@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <title>Chat</title>
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://unpkg.com/htmx.org/dist/ext/sse.js"></script>
 
     <style>
         /* --- GLOBAL --- */
@@ -107,6 +108,12 @@
     /* Assistant text */
     .msg-assistant-text {
         margin-left: 0.5rem;
+    }
+
+    .assistant-stream {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
     }
 
     /* --- SOURCES --- */
