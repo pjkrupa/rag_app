@@ -19,7 +19,7 @@
                 {% for key, value in doc.metadata.items() if value %}
                     <span class="pair">
                         <strong>{{ key | replace('_', ' ') | title }}:</strong>
-                        {{ value }}
+                        {{ value | urlize}}
                     </span>
                 {% endfor %}
             </div>
