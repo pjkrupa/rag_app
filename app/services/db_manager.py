@@ -48,6 +48,7 @@ class DatabaseManager:
         CREATE TABLE IF NOT EXISTS chats (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             user_id INTEGER,
+            slug TEXT,
             created_at INTEGER,
             updated_at INTEGER,
             FOREIGN KEY (user_id)
@@ -143,6 +144,19 @@ class DatabaseManager:
         self.insert_message(chat_id=chat_id, msg_docs=init_message)
         return chat_id
     
+    def add_slug(self, chat_id: int, slug: str):
+        
+        with self._get_conn() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                INSERT INTO chats (slug)
+                VALUES (?)
+                WHERE id = ?
+                """, (slug, chat_id,)
+            )
+
+    
     def update_message(
             self,
             message_id: int,
@@ -212,6 +226,25 @@ class DatabaseManager:
             
             return message_id
 
+    #---------------------#
+    ### query operations ###
+    #---------------------#
+
+    def get_users(self) -> list[tuple[int, str]]:
+        """
+        Gets all the users from the database and returns them as a list of User objects
+        """
+        with self._get_conn() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT id, user_name
+                FROM users
+                """,
+            )
+            rows = cursor.fetchall()
+            return rows
+
     def get_messages(self, chat_id: int) -> list[tuple[str, str | None]]:
         """
         gets messages and documents from the SQLite messages table...
@@ -234,3 +267,19 @@ class DatabaseManager:
             if not rows:
                 return None  # no chat with that ID
         return rows
+    
+    def get_chats(self, user_id: int) -> list[tuple[int, str]]:
+        with self._get_conn() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT id, slug
+                FROM chats
+                WHERE user_id = ?
+                ORDER BY created_at ASC
+                LIMIT 10 
+                """,
+                (user_id,)
+            )
+
+            return cursor.fetchall()

@@ -11,8 +11,11 @@ class User:
         self.id = self.get_id()
 
     def get_id(self):
-        user_id= self.db.check_user(user_name=self.name)
+        user_id = self.db.check_user(user_name=self.name)
         if user_id is None:
             self.logger.warning(f"User {self.name} not found in the database.")
             raise UserNotFoundError(f"User {self.name} not found in the database.")
         return user_id
+    
+    def get_chats(self):
+        return self.db.get_chats(self.id)

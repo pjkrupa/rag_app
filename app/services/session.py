@@ -1,4 +1,5 @@
 from collections.abc import Iterator
+import uuid
 from app.core.config import Configurations
 from app.services.user import User
 from app.services.db_manager import DatabaseManager
@@ -9,15 +10,16 @@ from app.core.errors import *
 from app.services.tool_handler import ToolHandler
 
 
-class Orchestrator:
+class Session:
     def __init__(self, configs: Configurations):
-        self.configs = configs
-        self.db = DatabaseManager(configs=configs)
+        self.id = str(uuid.uuid4())
+        self.configs: Configurations = configs
+        self.db: DatabaseManager = DatabaseManager(configs=configs)
         self.logger = self.configs.logger
-        self.user = None
-        self.chat = None
-        self.llm_client = LlmClient(configs=configs)
-        self.tool_client = ToolHandler(configs=configs)
+        self.user: User = None
+        self.chat: Chat = None
+        self.llm_client: LlmClient = LlmClient(configs=configs)
+        self.tool_client: ToolHandler = ToolHandler(configs=configs)
         self._log_configs()
 
     def _log_configs(self):
@@ -201,6 +203,23 @@ class Orchestrator:
             if args_fragment:
                 tool_call.function.arguments += args_fragment
 
+    def load_chat(self, chat_id: int):
+        if not self.user:
+            self.logger.error(f"User not loaded. You have to add a user to the session before you can load a chat.")
+            return
+        self.chat = Chat(
+            logger=self.logger, 
+            user=self.user, 
+            db=self.db, 
+            configs=self.configs, 
+            chat_id=chat_id,
+            )
+        
+    def load_user(self, user_name: str):
+        self.user = User(configs=self.configs, db=self.db, user_name=user_name)
+
+    def get_chat_list(self):
+        chat_list = self.db
 
     def last_message(self) -> MessageDocuments:
         return self.chat.messages[-1]

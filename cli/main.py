@@ -2,7 +2,7 @@ import os
 from app.models import *
 from app.core.config import Configurations
 from app.core.logging_setup import get_logger
-from app.services.orchestrator import Orchestrator
+from app.services.session import Session
 
 if __name__ == "__main__":
     
@@ -16,7 +16,7 @@ if __name__ == "__main__":
     print("-" * 50)
     print("-" * 50)
     
-    orchestrator = Orchestrator(configs=configs)
+    orchestrator = Session(configs=configs)
     while True:
         print("Please choose: (1) Existing user; (2) Create user")
         selection = input(">> ")

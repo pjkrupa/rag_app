@@ -1,4 +1,5 @@
 from pydantic import BaseModel
+from dataclasses import dataclass
 from typing import Literal, Any, TypedDict, List, Optional
 from logging import Logger
 
@@ -93,3 +94,10 @@ class RerankResponse(BaseModel):
 class StreamEvent(BaseModel):
     type: Literal["token", "done", "error"]
     content: Optional[str] = None
+
+# -----------------------------
+# User model
+# -----------------------------
+class UserModel(BaseModel):
+    id: int
+    name: str
