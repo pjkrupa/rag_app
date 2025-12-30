@@ -9,7 +9,7 @@ from app.models import Message, UserModel
 from app.services.session import Session
 from app.services.user import User
 from app.core.config import Configurations
-from app.core.errors import ConfigurationsError
+from app.core.errors import ConfigurationsError, UserAlreadyExistsError
 from app.core.logging_setup import get_logger
 from api.session_manager import SessionManager
 
@@ -39,6 +39,7 @@ app = FastAPI()
 @app.get("/", response_class=HTMLResponse)
 async def landing_page(
     request: Request,
+    flash_error: str | None = Cookie(default=None),
     session_id: str | None = Cookie(default=None),
     sm: SessionManager = Depends(get_session_manager)
 ):
@@ -49,10 +50,7 @@ async def landing_page(
 
     if invalid:
         session = Session(configs=configs)
-        
-        # starts a session with the default user. for dev.
-        session.default_user()
-        
+
         sm.sessions.append(session)
         
     else:
@@ -62,8 +60,11 @@ async def landing_page(
 
     response = templates.TemplateResponse(
         "landing.html",
-        {"request": request, "users": users},
+        {"request": request, "users": users, "error": flash_error,},
     )
+
+    if flash_error:
+        response.delete_cookie("flash_error", path="/")
 
     if invalid:
         response.set_cookie(
@@ -78,7 +79,7 @@ async def landing_page(
     return response
 
 
-@app.get("/{user_name}", name="user_page")
+@app.get("/users/{user_name}", name="user_page")
 async def get_user(
     request: Request,
     user_name: str,
@@ -101,7 +102,7 @@ async def get_user(
     )
 
 
-@app.get("{user_name}/chat/{chat_id}", name="individual_chat", response_class=HTMLResponse)
+@app.get("/user/{user_name}/chat/{chat_id}", name="individual_chat", response_class=HTMLResponse)
 async def get_chat(
     request: Request,
     sm: SessionManager = Depends(get_session_manager),
@@ -109,51 +110,82 @@ async def get_chat(
     pass
     
 
-@app.get("/", response_class=HTMLResponse)
-async def get_chat(
+@app.post("/create_user/", name="create_user")
+async def create_user(
     request: Request,
-    sm: SessionManager = Depends(get_session_manager)
-    ):
-    session = Session(configs=configs)
-
-    # This is just for dev. maybe move it to a config.
-    session.default_user()
-
-    chat_id = session.chat.id
-    session.logger.info(f"chat_id in GET: {chat_id}")
-    sm.sessions[chat_id] = session
-    session.logger.info(f"Sessions logged by session manager: {sm.sessions.keys()}")
-    
-    return templates.TemplateResponse("chat.html", {
-        "request": request,
-        "user_message": None,
-        "llm_message": None,
-        "chat_id": chat_id,
-        }
-    )
-
-@app.post("/chat", response_class=HTMLResponse)
-async def post_chat(
-    request: Request, 
-    prompt: str = Form(...),
-    chat_id: int | None = Form(default=None),
-    sm: SessionManager = Depends(get_session_manager)
+    user_name: str = Form(...),
+    session_id: str | None = Cookie(default=None),
+    sm: SessionManager = Depends(get_session_manager),
 ):
-    session = sm.sessions.get(chat_id)
-    if session is None:
-        return HTMLResponse("Session expired or invalid", status_code=400)
-    logger.debug(f"chat_id_4: {chat_id}")
-    user_message = Message(role="user", content=prompt)
-    msg_docs = session.process_prompt(prompt=prompt)
+    try:
+        if not session_id or not sm.has_session(session_id):
+            logger.error(f"Session ID not found, redirecting back to landing page...")
+            return RedirectResponse("/", status_code=303)
+        session = sm.get_session(session_id)
+        session.db.create_user(user_name=user_name)
+        session.load_user(user_name=user_name)
+    except UserAlreadyExistsError as e:
+        logger.error(f"There was an error creating the user: {e}")
+        redirect = RedirectResponse("/", status_code=303)
+        redirect.set_cookie(
+            "flash_error",
+            "User already exists. Please choose another name.",
+            max_age=5,
+            path="/",
+        )
+        return redirect
+
     
-    return templates.TemplateResponse("chat-box.html", {
-        "request": request,
-        "user_message": user_message,
-        "llm_message": msg_docs.message,
-        "documents": msg_docs.documents,
-        "chat_id": chat_id,
-        }
-    )
+    url = request.url_for("user_page", user_name=user_name)
+    return RedirectResponse(url, status_code=303)
+
+### old stuff
+
+# @app.get("/", response_class=HTMLResponse)
+# async def get_chat(
+#     request: Request,
+#     sm: SessionManager = Depends(get_session_manager)
+#     ):
+#     session = Session(configs=configs)
+
+#     # This is just for dev. maybe move it to a config.
+#     session.default_user()
+
+#     chat_id = session.chat.id
+#     session.logger.info(f"chat_id in GET: {chat_id}")
+#     sm.sessions[chat_id] = session
+#     session.logger.info(f"Sessions logged by session manager: {sm.sessions.keys()}")
+    
+#     return templates.TemplateResponse("chat.html", {
+#         "request": request,
+#         "user_message": None,
+#         "llm_message": None,
+#         "chat_id": chat_id,
+#         }
+#     )
+
+# @app.post("/chat", response_class=HTMLResponse)
+# async def post_chat(
+#     request: Request, 
+#     prompt: str = Form(...),
+#     chat_id: int | None = Form(default=None),
+#     sm: SessionManager = Depends(get_session_manager)
+# ):
+#     session = sm.sessions.get(chat_id)
+#     if session is None:
+#         return HTMLResponse("Session expired or invalid", status_code=400)
+#     logger.debug(f"chat_id_4: {chat_id}")
+#     user_message = Message(role="user", content=prompt)
+#     msg_docs = session.process_prompt(prompt=prompt)
+    
+#     return templates.TemplateResponse("chat-box.html", {
+#         "request": request,
+#         "user_message": user_message,
+#         "llm_message": msg_docs.message,
+#         "documents": msg_docs.documents,
+#         "chat_id": chat_id,
+#         }
+#     )
 
 ############
 # streaming endpoints (doesn't work)

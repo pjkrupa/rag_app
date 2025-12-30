@@ -13,9 +13,9 @@
         <h2>Select a chat:</h2>
         {% for chat in chats %}
             {% if chat[0] %}
-                <a href="{{ request.url_for('individual_chat', chat_id=chat[0], user_name=user_name) }}">{{ chat[1] }}</a>
+                <a href="{{ request.url_for('individual_chat', chat_id=chat[0], user_name=user_name) }}">{{ chat[1] }}</a><br>
             {% else %}
-                <p>No chats to display.</p>
+                <p>No chats to display.</p><br>
             {% endif %}
         {% endfor %}
     </div>

@@ -26,9 +26,16 @@ class Chat:
         
         if self.id:
             self._load_messages()
-        else:
-            init_message = self.messages[0]
-            self.id = self.db.create_chat(user_id=self.user.id, init_message=init_message)
+
+    def init_chat(self, prompt: str):
+        """
+        run this method for the first prompt in the chat.
+        it will save the chat to the database with the system message, set a chat_id,
+        and add the user first message to the chat.
+        """
+        init_message = self.messages[0]
+        self.id = self.db.create_chat(user_id=self.user.id, init_message=init_message)
+        self.add_message(MessageDocuments(message=Message(role="user", content=prompt)))
 
     def add_message(self, msg_docs: MessageDocuments):
         message_id = self.db.insert_message(chat_id=self.id, msg_docs=msg_docs)
