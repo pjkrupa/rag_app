@@ -26,6 +26,7 @@ class Chat:
         
         if self.id:
             self._load_messages()
+            self._load_slug()
 
     def init_chat(self, prompt: str):
         """
@@ -74,3 +75,6 @@ class Chat:
             self.logger.warning(f"Chat {self.id} not found in the database.")
             raise ChatNotFoundError(f"Chat {self.id} not found in the database.")
         self.messages = self.blobs_to_msg_docs(messages_docs=messages_docs)
+
+    def _load_slug(self):
+        self.slug = self.db.get_slug(chat_id=self.id)

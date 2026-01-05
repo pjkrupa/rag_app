@@ -283,3 +283,18 @@ class DatabaseManager:
             )
 
             return cursor.fetchall()
+    
+    def get_slug(self, chat_id: int) -> str:
+        with self._get_conn() as conn:
+            cursor = conn.cursor()
+            cursor.execute(
+                """
+                SELECT slug
+                FROM chats
+                WHERE id = ?
+                """,
+                (chat_id,)
+            )
+
+            row = cursor.fetchone()
+            return row[0] if row else None

@@ -1,12 +1,42 @@
+{% if chat is defined %}
+    <div id="new-chat-link">
+        <a href="{{ url_for('user_page', user_name=user_name) }}">
+            Start new chat
+        </a>
+    </div>
+{% else %}
+    <div id="new-chat-link" class="hidden">
+        <a href="{{ url_for('user_page', user_name=user_name) }}">
+            Start new chat
+        </a>
+    </div>
+{% endif %}
 
-<div id="chat-box"></div>
+<div id="chat-box">
+    {% if chat is defined %}
+        {% for msg_docs in chat %}
+            {% if msg_docs.message.role == "user" %}
+                {% set user_message=msg_docs.message %}
+                {% include "user-message.html" %}
+            {% elif msg_docs.message.role == "assistant" and msg_docs.message.content %}
+                {% set assistant_message=msg_docs.message %}
+                {% set documents=msg_docs.documents %}
+                {% include "assistant-message.html" %}
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+</div>
 
 <form
     hx-post="/chat"
     hx-target="#chat-box"
     hx-swap="beforeend"
     hx-indicator="#status"
-    hx-on="htmx:afterRequest: this.reset()"
+    hx-on="
+        htmx:afterRequest:
+            this.reset();
+            showNewChatLink();
+    "
     autocomplete="off"
 >
     <input type="hidden" name="chat_id" value="{{ chat_id }}">
@@ -24,4 +54,22 @@
             }
         });
     </script>
+
+    <script>
+        function showNewChatLink() {
+            document.getElementById("new-chat-link")?.classList.remove("hidden");
+        }
+    </script>
+
+{% if chat is defined %}
+    <script>
+        window.addEventListener("DOMContentLoaded", function () {
+            const box = document.getElementById("chat-box");
+            if (box) {
+                box.scrollTop = box.scrollHeight;
+            }
+        });
+    </script>
+{% endif %}
+
 

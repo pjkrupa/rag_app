@@ -111,10 +111,26 @@ async def get_user(
 
 @app.get("/user/{user_name}/chat/{chat_id}", name="individual_chat", response_class=HTMLResponse)
 async def get_chat(
+    user_name: str,
+    chat_id: str,
     request: Request,
     sm: SessionManager = Depends(get_session_manager),
+    flash_error: str | None = Cookie(default=None),
+    session_id: str | None = Cookie(default=None),
 ):
-    pass
+    if not session_id or not sm.has_session(session_id):
+        redirect = RedirectResponse("/", status_code=303)
+        return redirect
+
+    session = sm.get_session(session_id=session_id)
+    session.load_chat(chat_id=chat_id)
+    chats = session.user.get_chats()
+
+    response = templates.TemplateResponse(
+        "main.html",
+        {"request": request, "chat": session.chat.messages, "user_name": user_name, "chats": chats}
+    )
+    return response
 
 
 @app.post("/chat", response_class=HTMLResponse)
@@ -129,7 +145,7 @@ async def post_chat(
 
     print("cookie:", session_id)
     print("sessions:", [session.id for session in sm.sessions])
-    
+
     if session is None:
         return HTMLResponse("Session expired or invalid", status_code=400)
     logger.debug(f"chat_id_4: {chat_id}")
@@ -139,7 +155,7 @@ async def post_chat(
     return templates.TemplateResponse("chat-box.html", {
         "request": request,
         "user_message": user_message,
-        "llm_message": msg_docs.message,
+        "assistant_message": msg_docs.message,
         "documents": msg_docs.documents,
         "chat_id": chat_id,
         }
@@ -194,7 +210,7 @@ async def create_user(
 #     return templates.TemplateResponse("chat.html", {
 #         "request": request,
 #         "user_message": None,
-#         "llm_message": None,
+#         "assistant_message": None,
 #         "chat_id": chat_id,
 #         }
 #     )

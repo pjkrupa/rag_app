@@ -1,40 +1,7 @@
-{% if user_message and llm_message %}
+{% if user_message and assistant_message %}
 
-<div class="msg msg-user">
-    <div class="sender">User</div>
-    <div>{{ user_message.content }}</div>
-</div>
+    {% include "user-message.html" %}
+    {% include "assistant-message.html" %}
 
-<div class="msg msg-assistant">
-    <div class="sender">Assistant</div>
-    <div>{{ llm_message.content | markdown | safe }}</div>
-
-    {% if documents %}
-    <details class="sources-details">
-        <summary>📄 Sources</summary>
-
-        {% for doc in documents %}
-        <div class="source-block">
-            <div class="metadata-inline">
-                {% for key, value in doc.metadata.items() if value %}
-                    <span class="pair">
-                        <strong>{{ key | replace('_', ' ') | title }}:</strong>
-                        {{ value | urlize}}
-                    </span>
-                {% endfor %}
-            </div>
-
-            <div class="sources-text">
-                {{ doc.document | safe }}
-            </div>
-
-            <div class="doc-divider"></div>
-        </div>
-        {% endfor %}
-
-    </details>
-    {% endif %}
-
-</div>
 {% endif %}
 

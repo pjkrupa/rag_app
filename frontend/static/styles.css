@@ -238,3 +238,7 @@ button:hover {
 .htmx-request.htmx-indicator {
     display: block;
 }
+
+.hidden {
+    display: none;
+}
