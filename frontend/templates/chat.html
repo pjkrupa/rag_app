@@ -1,43 +1,20 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>Chat</title>
-    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
 
-</head>
+<div id="chat-box"></div>
 
-<body>
+<form
+    hx-post="/chat"
+    hx-target="#chat-box"
+    hx-swap="beforeend"
+    hx-indicator="#status"
+    hx-on="htmx:afterRequest: this.reset()"
+    autocomplete="off"
+>
+    <input type="hidden" name="chat_id" value="{{ chat_id }}">
+    <textarea name="prompt" rows="3" autocomplete="off" required></textarea>
+    <button type="submit">Send</button>
+</form>
 
-<div class="layout">
-    <!-- LEFT SIDEBAR -->
-    <div class="sidebar">
-        <!-- leave empty for now -->
-    </div>
-
-    <!-- MAIN CONTENT -->
-    <div class="main">
-        <h2>Chat</h2>
-
-        <!-- Chats load here-->
-        <div id="chat-box"></div>
-
-        <form
-            hx-post="/chat"
-            hx-target="#chat-box"
-            hx-swap="beforeend"
-            hx-indicator="#status"
-            hx-on="htmx:afterRequest: this.reset()"
-            autocomplete="off"
-        >
-            <input type="hidden" name="chat_id" value="{{ chat_id }}">
-            <textarea name="prompt" rows="3" autocomplete="off" required></textarea>
-            <button type="submit">Send</button>
-        </form>
-
-        <div id="status" class="htmx-indicator">Working…</div>
-    </div>
-</div>
+<div id="status" class="htmx-indicator">Working…</div>
 
     <script>
         document.body.addEventListener("htmx:afterSwap", function (event) {
@@ -47,7 +24,4 @@
             }
         });
     </script>
-
-</body>
-</html>
 

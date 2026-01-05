@@ -1,25 +1,11 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>rag_app landing page</title>
-    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-</head>
-
-<body>
-
-<div class="layout">
-    <!-- LEFT SIDEBAR -->
-    <div class="sidebar">
-        <!-- leave empty for now -->
-    </div>
-
-    <!-- MAIN CONTENT -->
-    <div class="main">
-        <h2>Select a user:</h2>
+<h2>Select a user:</h2>
+        <ul class="sidebar-list">
         {% for user in users %}
-            <a href="{{ request.url_for('user_page', user_name=user) }}">{{ user }}</a><br>
+            <li>
+            <a href="{{ request.url_for('user_page', user_name=user) }}">{{ user }}</a>
+            </li>
         {% endfor %}
+        </ul>
         <h2>... or create a new user:</h2>
         <form method="post" action="{{ request.url_for('create_user') }}">
             <label for="user_name">Username</label><br>
@@ -38,8 +24,3 @@
             <div class="error">{{ error }}</div>
         {% endif %}
     </div>
-</div>
-
-</body>
-</html>
-

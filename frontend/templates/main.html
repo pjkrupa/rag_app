@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>rag_app main page</title>
+    <link rel="stylesheet" href="{{ request.url_for('static', path='styles.css') }}">
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+</head>
+
+<body>
+
+<div class="layout">
+    <!-- LEFT SIDEBAR -->
+    <div class="sidebar">
+        {% if users is defined and users %}
+            {% include "sidebar-select-user.html" %}
+        {% elif chats is defined %}
+            {% include "sidebar-show-chats.html" %}
+        {% endif %}
+    </div>
+    
+
+    <!-- MAIN CONTENT -->
+    <div class="main">
+        <h2>Chat</h2>
+        {% if user_name is defined %}
+            {% include "chat.html" %}
+        {% else %}
+            <p>Chat goes here once you load your user.</p>
+        {% endif %}
+</div>
+</div>
+
+</body>
+</html>
+

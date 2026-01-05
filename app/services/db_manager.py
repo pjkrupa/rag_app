@@ -150,8 +150,8 @@ class DatabaseManager:
             cursor = conn.cursor()
             cursor.execute(
                 """
-                INSERT INTO chats (slug)
-                VALUES (?)
+                UPDATE chats
+                SET slug = ?
                 WHERE id = ?
                 """, (slug, chat_id,)
             )

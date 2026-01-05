@@ -1,0 +1,14 @@
+<h2>Click to load a chat:</h2>
+        {% if chats %}
+            {% for chat in chats %}
+                <ul>
+                    <li>
+                        <a href="{{ request.url_for('individual_chat', chat_id=chat[0], user_name=user_name) }}">{{ chat[1] }}</a><br>
+                    </li>
+                </ul>
+            {% endfor %}
+        {% else %}
+            <p>No chats yet.</p><br>
+        {% endif %}
+            
+        

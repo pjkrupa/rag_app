@@ -4,6 +4,7 @@ from functools import lru_cache
 from fastapi import FastAPI, Form, Request, Depends, Response, Cookie
 from fastapi.responses import HTMLResponse, StreamingResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from app.models import Message, UserModel
 from app.services.session import Session
@@ -36,8 +37,14 @@ except ConfigurationsError as e:
 
 app = FastAPI()
 
+app.mount(
+    "/static",
+    StaticFiles(directory="frontend/static"),
+    name="static",
+)
+
 @app.get("/", response_class=HTMLResponse)
-async def landing_page(
+async def main_page(
     request: Request,
     flash_error: str | None = Cookie(default=None),
     session_id: str | None = Cookie(default=None),
@@ -59,7 +66,7 @@ async def landing_page(
     users = [row[1] for row in session.db.get_users()]
 
     response = templates.TemplateResponse(
-        "landing.html",
+        "main.html",
         {"request": request, "users": users, "error": flash_error,},
     )
 
@@ -97,7 +104,7 @@ async def get_user(
     chats = session.user.get_chats()
 
     return templates.TemplateResponse(
-        "user_page.html", 
+        "main.html", 
         {"request": request, "chats": chats, "user_name": user_name},
     )
 
@@ -108,7 +115,35 @@ async def get_chat(
     sm: SessionManager = Depends(get_session_manager),
 ):
     pass
+
+
+@app.post("/chat", response_class=HTMLResponse)
+async def post_chat(
+    request: Request, 
+    prompt: str = Form(...),
+    session_id: str | None = Cookie(default=None),
+    chat_id: int | None = Form(default=None),
+    sm: SessionManager = Depends(get_session_manager)
+):
+    session = sm.get_session(session_id=session_id)
+
+    print("cookie:", session_id)
+    print("sessions:", [session.id for session in sm.sessions])
     
+    if session is None:
+        return HTMLResponse("Session expired or invalid", status_code=400)
+    logger.debug(f"chat_id_4: {chat_id}")
+    user_message = Message(role="user", content=prompt)
+    msg_docs = session.process_prompt(prompt=prompt)
+    
+    return templates.TemplateResponse("chat-box.html", {
+        "request": request,
+        "user_message": user_message,
+        "llm_message": msg_docs.message,
+        "documents": msg_docs.documents,
+        "chat_id": chat_id,
+        }
+    )
 
 @app.post("/create_user/", name="create_user")
 async def create_user(
@@ -119,7 +154,7 @@ async def create_user(
 ):
     try:
         if not session_id or not sm.has_session(session_id):
-            logger.error(f"Session ID not found, redirecting back to landing page...")
+            logger.error(f"Session ID not found, redirecting back to main page...")
             return RedirectResponse("/", status_code=303)
         session = sm.get_session(session_id)
         session.db.create_user(user_name=user_name)
@@ -164,28 +199,7 @@ async def create_user(
 #         }
 #     )
 
-# @app.post("/chat", response_class=HTMLResponse)
-# async def post_chat(
-#     request: Request, 
-#     prompt: str = Form(...),
-#     chat_id: int | None = Form(default=None),
-#     sm: SessionManager = Depends(get_session_manager)
-# ):
-#     session = sm.sessions.get(chat_id)
-#     if session is None:
-#         return HTMLResponse("Session expired or invalid", status_code=400)
-#     logger.debug(f"chat_id_4: {chat_id}")
-#     user_message = Message(role="user", content=prompt)
-#     msg_docs = session.process_prompt(prompt=prompt)
-    
-#     return templates.TemplateResponse("chat-box.html", {
-#         "request": request,
-#         "user_message": user_message,
-#         "llm_message": msg_docs.message,
-#         "documents": msg_docs.documents,
-#         "chat_id": chat_id,
-#         }
-#     )
+
 
 ############
 # streaming endpoints (doesn't work)
