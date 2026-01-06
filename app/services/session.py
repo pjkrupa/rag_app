@@ -108,7 +108,9 @@ class Session:
         
         if tool_names:
             tools = self._get_tools(tool_names=tool_names)
-
+        else:
+            tools = None
+            
         # check if this is the first message in the chat
         if self.chat is None:
             self.chat = Chat(user=self.user, db=self.db, configs=self.configs, logger=self.logger)
