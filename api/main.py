@@ -53,7 +53,8 @@ elif configs.type == "dev":
         name="static",
     )
 
-
+def get_root_path(request: Request) -> str:
+    return request.scope.get("root_path", "")
 
 @app.get("/", response_class=HTMLResponse)
 async def main_page(
@@ -65,6 +66,8 @@ async def main_page(
     print("cookie:", session_id)
     print("sessions:", [session.id for session in sm.sessions])
     
+    root_path = get_root_path(request=request)
+
     invalid = not session_id or not sm.has_session(session_id)
 
     if invalid:
@@ -83,7 +86,7 @@ async def main_page(
     )
 
     if flash_error:
-        response.delete_cookie("flash_error", path="/")
+        response.delete_cookie("flash_error", path=root_path)
 
     if invalid:
         response.set_cookie(
@@ -92,7 +95,7 @@ async def main_page(
             httponly=True,
             secure=False,
             samesite="lax",
-            path="/",
+            path=root_path,
         )
 
     return response
@@ -105,10 +108,11 @@ async def get_user(
     session_id: str | None = Cookie(default=None),
     sm: SessionManager = Depends(get_session_manager)
 ):
+    root_path = get_root_path(request=request)
     print("cookie:", session_id)
     print("sessions:", [session.id for session in sm.sessions])
     if not session_id or not sm.has_session(session_id):
-        redirect = RedirectResponse("/", status_code=303)
+        redirect = RedirectResponse(f"{root_path}/", status_code=303)
         return redirect
 
     session = sm.get_session(session_id=session_id)
@@ -135,7 +139,8 @@ async def get_chat(
     session_id: str | None = Cookie(default=None),
 ):
     if not session_id or not sm.has_session(session_id):
-        redirect = RedirectResponse("/", status_code=303)
+        root_path = get_root_path(request=request)
+        redirect = RedirectResponse(f"{root_path}/", status_code=303)
         return redirect
 
     session = sm.get_session(session_id=session_id)
@@ -187,19 +192,22 @@ async def create_user(
 ):
     try:
         if not session_id or not sm.has_session(session_id):
+            root_path = get_root_path(request=request)
             logger.error(f"Session ID not found, redirecting back to main page...")
-            return RedirectResponse("/", status_code=303)
+            return RedirectResponse(f"{root_path}/", status_code=303)
         session = sm.get_session(session_id)
         session.db.create_user(user_name=user_name)
         session.load_user(user_name=user_name)
     except UserAlreadyExistsError as e:
         logger.error(f"There was an error creating the user: {e}")
-        redirect = RedirectResponse("/", status_code=303)
+        root_path = get_root_path(request=request)
+        redirect = RedirectResponse(f"{root_path}/", status_code=303)
+        root_path = get_root_path(request=request)
         redirect.set_cookie(
             "flash_error",
             "User already exists. Please choose another name.",
             max_age=5,
-            path="/",
+            path=root_path,
         )
         return redirect
 
