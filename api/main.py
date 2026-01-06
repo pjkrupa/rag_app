@@ -1,4 +1,5 @@
 import markdown, html, asyncio
+from pathlib import Path
 from typing import AsyncGenerator
 from functools import lru_cache
 from fastapi import FastAPI, Form, Request, Depends, Response, Cookie
@@ -40,9 +41,10 @@ if not configs.prod:
 else:
     app = FastAPI()
 
+BASE_DIR = Path(__file__).resolve().parent.parent
 app.mount(
     "/static",
-    StaticFiles(directory="frontend/static"),
+    StaticFiles(directory=BASE_DIR / "frontend" / "static"),
     name="static",
 )
 
