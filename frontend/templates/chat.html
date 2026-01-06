@@ -29,7 +29,7 @@
 
 <form
     class="chat-form"
-    hx-post="/chat"
+    hx-post="{{ request.url_for('chat') }}"
     hx-target="#chat-box"
     hx-swap="beforeend"
     hx-indicator="#status"
