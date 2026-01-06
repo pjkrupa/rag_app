@@ -154,7 +154,7 @@ async def get_chat(
     return response
 
 
-@app.post("/chat", response_class=HTMLResponse)
+@app.post("/chat", response_class=HTMLResponse, name="chat")
 async def post_chat(
     request: Request, 
     prompt: str = Form(...),
