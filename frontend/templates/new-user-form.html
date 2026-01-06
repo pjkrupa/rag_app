@@ -1,0 +1,16 @@
+<form method="post" action="{{ request.url_for('create_user') }}">
+    <label for="user_name">Username</label><br>
+    <input
+        type="text"
+        id="user_name"
+        name="user_name"
+        required
+        minlength="1"
+        autofocus
+    >
+    <br><br>
+    <button type="submit">Create user</button>
+</form>
+{% if error %}
+    <div class="error">{{ error }}</div>
+{% endif %}

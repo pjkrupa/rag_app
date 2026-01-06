@@ -16,6 +16,9 @@
             {% include "sidebar-select-user.html" %}
         {% elif user_name is defined %}
             {% include "sidebar-show-chats.html" %}
+        {% else %}
+            <h2>Create a user:</h2>
+            {% include "new-user-form.html" %}
         {% endif %}
     </div>
     

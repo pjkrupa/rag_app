@@ -36,17 +36,18 @@ try:
 except ConfigurationsError as e:
     logger.error(f"The configurations didn't load correctly: {e}")
 
-if not configs.prod:
+if configs.type == "test":
     app = FastAPI(root_path="/rag_app")
-else:
+elif configs.type == "dev":
     app = FastAPI()
+    BASE_DIR = Path(__file__).resolve().parent.parent
+    app.mount(
+        "/static",
+        StaticFiles(directory=BASE_DIR / "frontend" / "static"),
+        name="static",
+    )
 
-BASE_DIR = Path(__file__).resolve().parent.parent
-app.mount(
-    "/static",
-    StaticFiles(directory=BASE_DIR / "frontend" / "static"),
-    name="static",
-)
+
 
 @app.get("/", response_class=HTMLResponse)
 async def main_page(
