@@ -28,6 +28,7 @@
 </div>
 
 <form
+    class="chat-form"
     hx-post="/chat"
     hx-target="#chat-box"
     hx-swap="beforeend"
@@ -41,25 +42,43 @@
 >
     <input type="hidden" name="chat_id" value="{{ chat_id }}">
     <textarea name="prompt" rows="3" autocomplete="off" required></textarea>
+
+    <div class="tool-options">
+        <label>
+            <input type="checkbox" name="tool_names" value="gdpr_query">
+            Natural language search of the GDPR
+        </label>
+
+        <label>
+            <input type="checkbox" name="tool_names" value="gdpr_get">
+            Retrieve specific articles from the GDPR
+        </label>
+
+        <label>
+            <input type="checkbox" name="tool_names" value="edpb_query">
+            Natural language search of EDPB Guidelines
+        </label>
+    </div>
+
     <button type="submit">Send</button>
 </form>
 
 <div id="status" class="htmx-indicator">Working…</div>
 
-    <script>
-        document.body.addEventListener("htmx:afterSwap", function (event) {
-            if (event.detail.target.id === "chat-box") {
-                const box = document.getElementById("chat-box");
-                box.scrollTop = box.scrollHeight;
-            }
-        });
-    </script>
-
-    <script>
-        function showNewChatLink() {
-            document.getElementById("new-chat-link")?.classList.remove("hidden");
+<script>
+    document.body.addEventListener("htmx:afterSwap", function (event) {
+        if (event.detail.target.id === "chat-box") {
+            const box = document.getElementById("chat-box");
+            box.scrollTop = box.scrollHeight;
         }
-    </script>
+    });
+</script>
+
+<script>
+    function showNewChatLink() {
+        document.getElementById("new-chat-link")?.classList.remove("hidden");
+    }
+</script>
 
 {% if chat is defined %}
     <script>

@@ -106,7 +106,7 @@ h2 {
 }
 
 #chat-box:empty {
-    min-height: 120px;
+    min-height: 60px;
 }
 
 /* When chat has content, allow it to expand */
@@ -241,4 +241,20 @@ button:hover {
 
 .hidden {
     display: none;
+}
+
+.chat-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.chat-form textarea {
+    width: 100%;
+}
+
+.tool-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
 }

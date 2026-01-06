@@ -18,7 +18,7 @@ class ToolHandler:
     def _make_tool_chain(self, TOOLS: list[dict]) -> dict[str:Tool]:
         tools = [Tool(type="function", function=FunctionDefinition.model_validate(tool)) for tool in TOOLS]
         return {tool.function.name: tool for tool in tools}
-    
+
     def handle(self, message: Message) -> list[MessageDocuments]:
         tool_messages = []
         for tool_call in message.tool_calls:

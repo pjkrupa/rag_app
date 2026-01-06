@@ -1,4 +1,5 @@
 from collections.abc import Iterator
+
 import uuid
 from app.core.config import Configurations
 from app.services.user import User
@@ -31,22 +32,15 @@ class Session:
         except UserAlreadyExistsError as e:
             self.logger.info(f"Default user already exists, starting session...")
         self.user = User(configs=self.configs, db=self.db, user_name="default")
-
-    # checks to see if user attached a tool to the prompt with --<tool>
-    def _parse_prompt(self, prompt: str) -> tuple[str, list[Tool] | None ]:
-        if "--" not in prompt:
-            return prompt, None
-        prompt_list = prompt.split("--")
-        prompt = prompt_list.pop(0)
-
-        tool_list = []
-        for tool_name in prompt_list:
-            tool_name = tool_name.strip()
-            if tool_name not in self.tool_client.tool_names:
-                self.logger.warning(f"Tool not found: {tool_name}. Skipping.")
-            else:
-                tool_list.append(self.tool_client.tool_chain[tool_name])
-        return prompt, tool_list
+    
+    def _get_tools(self, tool_names: list[str]) -> tuple[str, list[Tool]]:
+        tools = []
+        for tool_name in tool_names:
+            try:
+                tools.append(self.tool_client.tool_chain[tool_name])
+            except LookupError:
+                self.logger.error(f"Tool not found on the tool chain.")
+        return tools
     
     def _fail(self, msg: str):
         self.logger.error(msg)
@@ -106,18 +100,15 @@ class Session:
     def last_message(self) -> MessageDocuments:
         return self.chat.messages[-1]
     
-    def process_prompt(self, prompt: str) -> MessageDocuments:
-        # check for tool calling
-        try:
-            prompt, tools = self._parse_prompt(prompt)
-        except ToolParseError:
-            return MessageDocuments(
-                message=Message(
-                    role="assistant", 
-                    content="Sorry, that tool could not be found. Please select a valid tool."
-                    )
-                )
+    def process_prompt(
+            self, 
+            prompt: str, 
+            tool_names: list[str] = []
+        ) -> MessageDocuments:
         
+        if tool_names:
+            tools = self._get_tools(tool_names=tool_names)
+
         # check if this is the first message in the chat
         if self.chat is None:
             self.chat = Chat(user=self.user, db=self.db, configs=self.configs, logger=self.logger)
@@ -166,6 +157,22 @@ class Session:
                 self.logger.error(f"User already exists: {e}")
                 user_name = input("Select a user name>> ")
                 continue
+    
+    # use this to parse prompts from the CLI before calling process_prompt()
+    def cli_parse_prompt(self, prompt: str) -> list[Tool] | None :
+        if "--" not in prompt:
+            return prompt, None
+        prompt_list = prompt.split("--")
+        prompt = prompt_list.pop(0)
+
+        tool_list = []
+        for tool_name in prompt_list:
+            tool_name = tool_name.strip()
+            if tool_name not in self.tool_client.tool_names:
+                self.logger.warning(f"Tool not found: {tool_name}. Skipping.")
+            else:
+                tool_list.append(self.tool_client.tool_chain[tool_name])
+        return prompt, tool_list
     
 ########################################
 ### the following are methods for 

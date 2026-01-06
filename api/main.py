@@ -100,6 +100,10 @@ async def get_user(
         return redirect
 
     session = sm.get_session(session_id=session_id)
+
+    # clears the chat from the session 
+    session.chat = None
+
     session.load_user(user_name=user_name)
     chats = session.user.get_chats()
 
@@ -137,6 +141,7 @@ async def get_chat(
 async def post_chat(
     request: Request, 
     prompt: str = Form(...),
+    tool_names: list[str] = Form([]),
     session_id: str | None = Cookie(default=None),
     chat_id: int | None = Form(default=None),
     sm: SessionManager = Depends(get_session_manager)
@@ -150,7 +155,7 @@ async def post_chat(
         return HTMLResponse("Session expired or invalid", status_code=400)
     logger.debug(f"chat_id_4: {chat_id}")
     user_message = Message(role="user", content=prompt)
-    msg_docs = session.process_prompt(prompt=prompt)
+    msg_docs = session.process_prompt(prompt=prompt, tool_names=tool_names)
     
     return templates.TemplateResponse("chat-box.html", {
         "request": request,
