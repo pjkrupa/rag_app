@@ -20,6 +20,9 @@ body {
     color: #d1d5db;
     padding: 1rem;
     border-right: 1px solid #111827;
+
+    height: 100vh;
+    overflow-y: auto;
 }
 
 .sidebar a {
@@ -257,4 +260,15 @@ button:hover {
     display: flex;
     flex-direction: column;
     gap: 0.25rem;
+}
+
+.text-field-and-button {
+    display: flex;
+    gap: 0.5rem;
+    align-items: stretch;
+}
+
+.text-field-and-button textarea {
+    flex: 1;
+    resize: vertical;
 }

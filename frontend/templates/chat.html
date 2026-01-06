@@ -41,9 +41,12 @@
     autocomplete="off"
 >
     <input type="hidden" name="chat_id" value="{{ chat_id }}">
-    <textarea name="prompt" rows="3" autocomplete="off" required></textarea>
-
+    <div class="text-field-and-button">
+        <textarea name="prompt" rows="3" autocomplete="off" required></textarea>
+        <button type="submit">Send</button>
+    </div>
     <div class="tool-options">
+        <strong>Tools:</strong>
         <label>
             <input type="checkbox" name="tool_names" value="gdpr_query">
             Natural language search of the GDPR
@@ -60,7 +63,6 @@
         </label>
     </div>
 
-    <button type="submit">Send</button>
 </form>
 
 <div id="status" class="htmx-indicator">Working…</div>

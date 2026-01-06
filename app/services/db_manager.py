@@ -276,8 +276,8 @@ class DatabaseManager:
                 SELECT id, slug
                 FROM chats
                 WHERE user_id = ?
-                ORDER BY created_at ASC
-                LIMIT 10 
+                ORDER BY created_at DESC
+                LIMIT 20 
                 """,
                 (user_id,)
             )
