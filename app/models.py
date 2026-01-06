@@ -67,6 +67,7 @@ class MessageDocuments(BaseModel):
 
 
 class ConfigurationsModel(BaseModel):
+    prod: bool
     model: str
     api_base: str
     chromadb_host: str

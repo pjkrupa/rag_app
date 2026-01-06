@@ -35,7 +35,10 @@ try:
 except ConfigurationsError as e:
     logger.error(f"The configurations didn't load correctly: {e}")
 
-app = FastAPI()
+if not configs.prod:
+    app = FastAPI(root_path="/rag_app")
+else:
+    app = FastAPI()
 
 app.mount(
     "/static",

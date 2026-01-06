@@ -1,3 +1,4 @@
+prod: False
 model: "gpt-4.1"
 api_base: "https://api.openai.com/v1"
 chromadb_host: "localhost"
