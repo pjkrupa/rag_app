@@ -38,6 +38,12 @@ except ConfigurationsError as e:
 
 if configs.type == "test":
     app = FastAPI(root_path="/rag_app")
+    BASE_DIR = Path(__file__).resolve().parent.parent
+    app.mount(
+        "/static",
+        StaticFiles(directory=BASE_DIR / "frontend" / "static"),
+        name="static",
+    )
 elif configs.type == "dev":
     app = FastAPI()
     BASE_DIR = Path(__file__).resolve().parent.parent
