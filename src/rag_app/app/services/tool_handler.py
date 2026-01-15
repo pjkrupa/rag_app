@@ -1,10 +1,10 @@
 import json
-from app.core.config import Configurations
-from app.core.errors import MetadataFilterError, RagClientFailedError
-from app.models import Tool, Message, FunctionDefinition
-from app.services.rag import RagClient
-from app.tools.registry import TOOLS
-from app.models import MessageDocuments
+from rag_app.app.core.config import Configurations
+from rag_app.app.core.errors import MetadataFilterError, RagClientFailedError
+from rag_app.app.models import Tool, Message, FunctionDefinition
+from rag_app.app.services.rag import RagClient
+from rag_app.app.tools.registry import TOOLS
+from rag_app.app.models import MessageDocuments
 
 class ToolHandler:
 

@@ -67,7 +67,7 @@ class MessageDocuments(BaseModel):
 
 
 class ConfigurationsModel(BaseModel):
-    type: Literal["prod", "dev", "test"]
+    root_path: str = ""
     model: str
     api_base: str
     chromadb_host: str
@@ -102,3 +102,4 @@ class StreamEvent(BaseModel):
 class UserModel(BaseModel):
     id: int
     name: str
+

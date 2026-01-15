@@ -1,7 +1,7 @@
 [project]
 name = "rag-app"
 version = "0.1.0"
-description = "Add your description here"
+description = "an app for RAG-enhanced chats with LLMs"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -16,3 +16,7 @@ dependencies = [
     "python-multipart>=0.0.20",
     "requests>=2.32.5",
 ]
+
+[project.scripts]
+rag-app-serve = "rag_app.api.main:serve"
+

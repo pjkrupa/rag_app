@@ -1,8 +1,8 @@
 from logging import Logger
 import os, yaml
 import litellm
-from app.models import ConfigurationsModel
-from app.core.errors import ConfigurationsError
+from rag_app.app.models import ConfigurationsModel
+from rag_app.app.core.errors import ConfigurationsError
 from pydantic import ValidationError
 
 class Configurations:

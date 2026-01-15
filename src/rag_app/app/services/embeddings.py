@@ -1,6 +1,6 @@
 import requests, time
-from app.core.config import Configurations
-from app.models import ChromaDbResult, RerankItem, RerankResponse
+from rag_app.app.core.config import Configurations
+from rag_app.app.models import ChromaDbResult, RerankItem, RerankResponse
 
 class EmbeddingsClient:
     def __init__(self, configs: Configurations):

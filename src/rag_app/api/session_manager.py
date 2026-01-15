@@ -1,5 +1,5 @@
 from typing import Dict
-from app.services.session import Session
+from rag_app.app.services.session import Session
 
 # build this out later into a robust session manager:
 #   - create, get, delete, exists, cleanup_expired

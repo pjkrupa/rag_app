@@ -1,9 +1,9 @@
 import json
 import chromadb
-from app.core.config import Configurations
-from app.core.errors import RagClientFailedError, MetadataFilterError
-from app.models import ChromaDbResult, Message, MessageDocuments, RerankResponse
-from app.services.embeddings import EmbeddingsClient
+from rag_app.app.core.config import Configurations
+from rag_app.app.core.errors import RagClientFailedError, MetadataFilterError
+from rag_app.app.models import ChromaDbResult, Message, MessageDocuments, RerankResponse
+from rag_app.app.services.embeddings import EmbeddingsClient
 
 class RagClient:
 

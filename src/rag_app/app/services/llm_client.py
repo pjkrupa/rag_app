@@ -1,9 +1,9 @@
 import time
 from collections.abc import Iterator
 from litellm import completion, RateLimitError, APIError
-from app.core.config import Configurations
-from app.models import Tool, Message, Parameters, MessageDocuments
-from app.core.errors import LlmCallFailedError
+from rag_app.app.core.config import Configurations
+from rag_app.app.models import Tool, Message, Parameters, MessageDocuments
+from rag_app.app.core.errors import LlmCallFailedError
 from requests.exceptions import ConnectionError
 
 TRANSIENT_ERRORS = (ConnectionError, TimeoutError)

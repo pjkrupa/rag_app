@@ -1,14 +1,14 @@
 from collections.abc import Iterator
 
 import uuid
-from app.core.config import Configurations
-from app.services.user import User
-from app.services.db_manager import DatabaseManager
-from app.services.chat import Chat
-from app.services.llm_client import LlmClient
-from app.models import *
-from app.core.errors import *
-from app.services.tool_handler import ToolHandler
+from rag_app.app.core.config import Configurations
+from rag_app.app.services.user import User
+from rag_app.app.services.db_manager import DatabaseManager
+from rag_app.app.services.chat import Chat
+from rag_app.app.services.llm_client import LlmClient
+from rag_app.app.models import *
+from rag_app.app.core.errors import *
+from rag_app.app.services.tool_handler import ToolHandler
 
 
 class Session:

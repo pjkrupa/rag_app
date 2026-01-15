@@ -1,8 +1,8 @@
 import os
-from app.models import *
-from app.core.config import Configurations
-from app.core.logging_setup import get_logger
-from app.services.session import Session
+from rag_app.app.models import *
+from rag_app.app.core.config import Configurations
+from rag_app.app.core.logging_setup import get_logger
+from rag_app.app.services.session import Session
 
 if __name__ == "__main__":
     

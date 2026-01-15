@@ -1,62 +1,31 @@
-import markdown, html, asyncio
-from pathlib import Path
-from typing import AsyncGenerator
-from functools import lru_cache
-from fastapi import FastAPI, Form, Request, Depends, Response, Cookie
-from fastapi.responses import HTMLResponse, StreamingResponse, RedirectResponse
+from dataclasses import dataclass
+from fastapi import APIRouter, Form, Request, Depends, Cookie
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
-from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
-from app.models import Message, UserModel
-from app.services.session import Session
-from app.services.user import User
-from app.core.config import Configurations
-from app.core.errors import ConfigurationsError, UserAlreadyExistsError
-from app.core.logging_setup import get_logger
-from api.session_manager import SessionManager
+from rag_app.app.models import Message
+from rag_app.app.services.session import Session
+from rag_app.app.core.config import Configurations
+from rag_app.app.core.errors import UserAlreadyExistsError
+from rag_app.api.deps import get_session_manager, SessionManager
 
+# model and helper function for getting objects from app state
+@dataclass(frozen=True)
+class AppState:
+    templates: Jinja2Templates
+    configs: Configurations
 
-templates = Jinja2Templates(directory="./frontend/templates/")
-templates.env.filters["markdown"] = lambda text: markdown.markdown(
-    text,
-    extensions=["fenced_code", "tables"]
-)
-
-# sets up the SessionManager object to be loaded into FastAPI as a dependency 
-@lru_cache
-def get_session_manager():
-    return SessionManager()
-
-logger = get_logger()
-
-# instantiates the configurations by fetching them from a YAML file
-# and logging any problems
-try:
-    configs = Configurations.load(logger=logger)
-except ConfigurationsError as e:
-    logger.error(f"The configurations didn't load correctly: {e}")
-
-if configs.type == "test":
-    app = FastAPI(root_path="/rag_app")
-    BASE_DIR = Path(__file__).resolve().parent.parent
-    app.mount(
-        "/static",
-        StaticFiles(directory=BASE_DIR / "frontend" / "static"),
-        name="static",
-    )
-elif configs.type == "dev":
-    app = FastAPI()
-    BASE_DIR = Path(__file__).resolve().parent.parent
-    app.mount(
-        "/static",
-        StaticFiles(directory=BASE_DIR / "frontend" / "static"),
-        name="static",
+def get_state(request:Request) -> AppState:
+    return AppState(
+        templates=request.app.state.templates,
+        configs=request.app.state.configs
     )
 
 def get_root_path(request: Request) -> str:
     return request.scope.get("root_path", "")
 
-@app.get("/", response_class=HTMLResponse)
+router = APIRouter()
+
+@router.get("/", response_class=HTMLResponse)
 async def main_page(
     request: Request,
     flash_error: str | None = Cookie(default=None),
@@ -66,12 +35,14 @@ async def main_page(
     print("cookie:", session_id)
     print("sessions:", [session.id for session in sm.sessions])
     
+    app = get_state(request=request)
+
     root_path = get_root_path(request=request)
 
     invalid = not session_id or not sm.has_session(session_id)
 
     if invalid:
-        session = Session(configs=configs)
+        session = Session(configs=app.configs)
 
         sm.sessions.append(session)
         
@@ -80,7 +51,7 @@ async def main_page(
 
     users = [row[1] for row in session.db.get_users()]
 
-    response = templates.TemplateResponse(
+    response = app.templates.TemplateResponse(
         "main.html",
         {"request": request, "users": users, "error": flash_error,},
     )
@@ -101,13 +72,14 @@ async def main_page(
     return response
 
 
-@app.get("/users/{user_name}", name="user_page")
+@router.get("/users/{user_name}", name="user_page")
 async def get_user(
     request: Request,
     user_name: str,
     session_id: str | None = Cookie(default=None),
     sm: SessionManager = Depends(get_session_manager)
 ):
+    app = get_state(request=request)
     root_path = get_root_path(request=request)
     print("cookie:", session_id)
     print("sessions:", [session.id for session in sm.sessions])
@@ -123,13 +95,13 @@ async def get_user(
     session.load_user(user_name=user_name)
     chats = session.user.get_chats()
 
-    return templates.TemplateResponse(
+    return app.templates.TemplateResponse(
         "main.html", 
         {"request": request, "chats": chats, "user_name": user_name},
     )
 
 
-@app.get("/user/{user_name}/chat/{chat_id}", name="individual_chat", response_class=HTMLResponse)
+@router.get("/user/{user_name}/chat/{chat_id}", name="individual_chat", response_class=HTMLResponse)
 async def get_chat(
     user_name: str,
     chat_id: str,
@@ -138,6 +110,7 @@ async def get_chat(
     flash_error: str | None = Cookie(default=None),
     session_id: str | None = Cookie(default=None),
 ):
+    app = get_state(request=request)
     if not session_id or not sm.has_session(session_id):
         root_path = get_root_path(request=request)
         redirect = RedirectResponse(f"{root_path}/", status_code=303)
@@ -147,14 +120,14 @@ async def get_chat(
     session.load_chat(chat_id=chat_id)
     chats = session.user.get_chats()
 
-    response = templates.TemplateResponse(
+    response = app.templates.TemplateResponse(
         "main.html",
         {"request": request, "chat": session.chat.messages, "user_name": user_name, "chats": chats}
     )
     return response
 
 
-@app.post("/chat", response_class=HTMLResponse, name="chat")
+@router.post("/chat", response_class=HTMLResponse, name="chat")
 async def post_chat(
     request: Request, 
     prompt: str = Form(...),
@@ -163,6 +136,7 @@ async def post_chat(
     chat_id: int | None = Form(default=None),
     sm: SessionManager = Depends(get_session_manager)
 ):
+    app = get_state(request=request)
     session = sm.get_session(session_id=session_id)
 
     print("cookie:", session_id)
@@ -170,11 +144,11 @@ async def post_chat(
 
     if session is None:
         return HTMLResponse("Session expired or invalid", status_code=400)
-    logger.debug(f"chat_id_4: {chat_id}")
+    app.configs.logger.debug(f"chat_id_4: {chat_id}")
     user_message = Message(role="user", content=prompt)
     msg_docs = session.process_prompt(prompt=prompt, tool_names=tool_names)
     
-    return templates.TemplateResponse("chat-box.html", {
+    return app.templates.TemplateResponse("chat-box.html", {
         "request": request,
         "user_message": user_message,
         "assistant_message": msg_docs.message,
@@ -183,23 +157,24 @@ async def post_chat(
         }
     )
 
-@app.post("/create_user/", name="create_user")
+@router.post("/create_user/", name="create_user")
 async def create_user(
     request: Request,
     user_name: str = Form(...),
     session_id: str | None = Cookie(default=None),
     sm: SessionManager = Depends(get_session_manager),
 ):
+    app = get_state(request=request)
     try:
         if not session_id or not sm.has_session(session_id):
             root_path = get_root_path(request=request)
-            logger.error(f"Session ID not found, redirecting back to main page...")
+            app.configs.logger.error(f"Session ID not found, redirecting back to main page...")
             return RedirectResponse(f"{root_path}/", status_code=303)
         session = sm.get_session(session_id)
         session.db.create_user(user_name=user_name)
         session.load_user(user_name=user_name)
     except UserAlreadyExistsError as e:
-        logger.error(f"There was an error creating the user: {e}")
+        app.configs.logger.error(f"There was an error creating the user: {e}")
         root_path = get_root_path(request=request)
         redirect = RedirectResponse(f"{root_path}/", status_code=303)
         root_path = get_root_path(request=request)

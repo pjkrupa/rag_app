@@ -1,10 +1,10 @@
 import json
 from logging import Logger
-from app.core.config import Configurations
-from app.core.errors import ChatNotFoundError
-from app.models import Message, ChromaDbResult, MessageDocuments, UserModel
-from app.services.db_manager import DatabaseManager
-from app.services.user import User
+from rag_app.app.core.config import Configurations
+from rag_app.app.core.errors import ChatNotFoundError
+from rag_app.app.models import Message, ChromaDbResult, MessageDocuments, UserModel
+from rag_app.app.services.db_manager import DatabaseManager
+from rag_app.app.services.user import User
 
 
 class Chat:
