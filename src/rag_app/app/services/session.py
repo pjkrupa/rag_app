@@ -33,13 +33,13 @@ class Session:
             self.logger.info(f"Default user already exists, starting session...")
         self.user = User(configs=self.configs, db=self.db, user_name="default")
     
-    def _get_tools(self, tool_names: list[str]) -> tuple[str, list[Tool]]:
+    def _get_tools(self, tool_names: list[str]) -> list[Tool]:
         tools = []
         for tool_name in tool_names:
             try:
                 tools.append(self.tool_client.tool_chain[tool_name])
             except LookupError:
-                self.logger.error(f"Tool not found on the tool chain.")
+                self.logger.error(f"Tool {tool_name} not found on the tool chain.")
         return tools
     
     def _fail(self, msg: str):
