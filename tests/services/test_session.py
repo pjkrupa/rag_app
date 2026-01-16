@@ -1,10 +1,11 @@
-import logging
+import logging, uuid
 from logging import Logger
 from rag_app.app.services.session import Session
 from rag_app.app.services.llm_client import LlmClient
 from rag_app.app.services.db_manager import DatabaseManager
 from rag_app.app.services.tool_handler import ToolHandler
 from rag_app.app.models import Tool, FunctionDefinition
+from tests.services.utils import build_db
 
 # checks the init to make sure chat and user are None and everything else loads as expected.
 def test_init_session(fake_configs):
@@ -56,12 +57,15 @@ def test__get_tools_failure(fake_configs, caplog):
     assert fake_tools[0].function.name == "fake_tool"
     assert "Tool bad_tool not found on the tool chain." in caplog.text
 
+def test_load_user_success(fake_configs, fake_messages):
+    # build a fresh db to populate it with test values
+    new_db_address = f"file:memdb_{uuid.uuid4().hex}?mode=memory&cache=shared"
+    fake_configs.sqlite_path = new_db_address
+    session = Session(configs=fake_configs)
+    build_db(fake_db=session.db, fake_messages=fake_messages)
+    session.load_user(user_name="peter")
+    assert session.user.name == "peter"
 
-# class FunctionDefinition(BaseModel):
-#     name: str
-#     description: str = ""
-#     parameters: dict[str, Any]
-
-# class Tool(BaseModel):
-#     type: str = "function"
-#     function: FunctionDefinition
+# need to add handling for this. right now, the route doesn't handle it at all.
+def test_load_user_failure(fake_configs, fake_messages):
+    pass
