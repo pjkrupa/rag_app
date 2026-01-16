@@ -1,7 +1,7 @@
 import pytest, logging, uuid, json, time
-from app.core.config import Configurations
-from app.services.db_manager import DatabaseManager
-from app.models import *
+from rag_app.app.core.config import Configurations
+from rag_app.app.services.db_manager import DatabaseManager
+from rag_app.app.models import *
 
 @pytest.fixture
 def fake_tools():
@@ -77,51 +77,5 @@ def fake_configs(fake_logger):
         system_prompt="system prompt"
     )
     return Configurations.from_model(logger=fake_logger, configs_model=configs)
-    
-@pytest.fixture
-def db_factory(fake_configs, fake_messages):
-    """
-    Returns a function that constructs a fresh, populated DatabaseManager.
-    Tests call: db = db_factory()
-    """
-    def _make_db():
-        fake_db = DatabaseManager(configs=fake_configs)
-        ts = int(time.time())
-        with fake_db._get_conn() as conn:
-            cursor = conn.cursor()
-
-            # generate the fake records
-            # user and chat ids will be 1
-            cursor.execute(
-                """
-                INSERT INTO users (user_name, created_at)
-                VALUES (?, ?)
-                """,
-                ("peter", ts)
-                )
-            user_id = cursor.lastrowid
-
-            cursor.execute(
-                """
-                INSERT INTO chats (user_id, created_at, updated_at)
-                VALUES (?, ?, ?)
-                """,
-                (user_id, ts, ts)
-                )
-            chat_id = cursor.lastrowid
-
-            msg_blob = fake_messages.message.model_dump_json()
-            docs_blob = json.dumps([d.model_dump() for d in fake_messages.documents])
-            
-            cursor.execute(
-                """
-                INSERT INTO messages (chat_id, message, documents, created_at)
-                VALUES (?, ?, ?, ?)
-                """,
-                (chat_id, msg_blob, docs_blob, ts)
-                )
-        return fake_db
-            
-    return _make_db
 
 

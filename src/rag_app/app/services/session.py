@@ -86,8 +86,7 @@ class Session:
         if not self.user:
             self.logger.error(f"User not loaded. You have to add a user to the session before you can load a chat.")
             return
-        self.chat = Chat(
-            logger=self.logger, 
+        self.chat = Chat( 
             user=self.user, 
             db=self.db, 
             configs=self.configs, 
@@ -113,7 +112,7 @@ class Session:
             
         # check if this is the first message in the chat
         if self.chat is None:
-            self.chat = Chat(user=self.user, db=self.db, configs=self.configs, logger=self.logger)
+            self.chat = Chat(user=self.user, db=self.db, configs=self.configs)
             self.chat.init_chat(prompt)
         else:
             self.chat.add_message(MessageDocuments(message=Message(role="user", content=prompt)))
@@ -140,7 +139,7 @@ class Session:
         while True:
             try:
                 self.user = User(configs=self.configs, db=self.db, user_name=user_name)
-                self.chat = Chat(user=self.user, db=self.db, configs=self.configs, logger=self.logger)
+                self.chat = Chat(user=self.user, db=self.db, configs=self.configs)
                 return
             except UserNotFoundError as e:
                 self.logger.error(f"User not found: {e}")
@@ -152,7 +151,7 @@ class Session:
             try:
                 self.db.create_user(user_name=user_name)
                 self.user = User(configs=self.configs, db=self.db, user_name=user_name)
-                self.chat = Chat(user=self.user, db=self.db, configs=self.configs, logger=self.logger)
+                self.chat = Chat(user=self.user, db=self.db, configs=self.configs)
                 self.logger.info(f"Created user {user_name}.")
                 return
             except UserAlreadyExistsError as e:

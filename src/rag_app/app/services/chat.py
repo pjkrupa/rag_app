@@ -10,13 +10,12 @@ from rag_app.app.services.user import User
 class Chat:
     def __init__(
             self, 
-            logger: Logger,
             user: UserModel, 
             db: DatabaseManager, 
             configs: Configurations, 
             chat_id: int = None,
             ):
-        self.logger = logger
+        self.logger = configs.logger
         self.configs = configs
         self.id = chat_id
         self.user = user

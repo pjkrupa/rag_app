@@ -1,31 +1,11 @@
-import pytest, logging
+import pytest
 from unittest.mock import MagicMock
-from app.core.config import Configurations
-from app.services.llm_client import LlmClient
-from app.models import *
-
-
-
-mock_logger = logging.getLogger(name="mock_logger")
-mock_logger.setLevel(level=logging.INFO)
-mock_logger.addHandler(logging.StreamHandler())
-
-configs = ConfigurationsModel(
-        model="llama",
-        api_base="http://localhost:11434",
-        chromadb_host="http://localhost",
-        chromadb_port=8000,
-        embeddings_url="http://localhost:8001",
-        chroma_top_n=10,
-        rerank_top_n=3,
-        sqlite_path="test.db",
-        system_prompt="system prompt"
-    )
-mock_configs = Configurations.from_model(logger=mock_logger, configs_model=configs)
+from rag_app.app.services.llm_client import LlmClient
+from rag_app.app.models import Message
 
 @pytest.fixture
-def llm_client():
-    return LlmClient(configs=mock_configs)
+def llm_client(fake_configs):
+    return LlmClient(configs=fake_configs)
 
 def test_llm_client_get_message(llm_client):
     fake_message_model = {"role": "user", "content": "test content"}

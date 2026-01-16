@@ -1,8 +1,8 @@
 from unittest.mock import MagicMock
-from app.services.rag import RagClient
+from rag_app.app.services.rag import RagClient
 import pytest, requests
-from app.models import ChromaDbResult, MessageDocuments, Message, RerankResponse, RerankItem
-from app.core.errors import RagClientFailedError
+from rag_app.app.models import ChromaDbResult, MessageDocuments, Message, RerankResponse, RerankItem
+from rag_app.app.core.errors import RagClientFailedError
 
 
 fake_query_raw_short = {
@@ -171,7 +171,7 @@ def test_chroma_query_success(rag_client):
     rag_client.emb_client.embed.assert_called_once_with(text="query text")
     rag_client._query.assert_called_once_with(query_embedding=[1.1, 2.2, 3.3], collection=collection)
     rag_client.emb_client.rerank.assert_called_once_with(query_text="query text", results=fake_chromadb_results)
-    rag_client._filter_results.assert_called_once_with(results=fake_chromadb_results, reranked=fake_rerank_response.results)
+    rag_client._filter_results.assert_called_once_with(results=fake_chromadb_results, reranked=fake_rerank_response)
     assert isinstance(result, MessageDocuments)
 
 def test_chroma_query_handle_resp_error(rag_client):

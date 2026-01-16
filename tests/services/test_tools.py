@@ -1,15 +1,15 @@
-from app.tools.registry import TOOLS
+from rag_app.app.tools.registry import TOOLS
 import pytest, logging,json
 from unittest.mock import patch, MagicMock
-from app.core.config import Configurations
-from app.services.chat import Chat
-from app.services.user import User
-from app.services.embeddings import EmbeddingsClient
-from app.services.llm_client import LlmClient
-from app.services.tool_handler import ToolHandler
-import app.services.tool_handler as toolhandler_module
-from app.services.db_manager import DatabaseManager
-from app.models import *
+from rag_app.app.core.config import Configurations
+from rag_app.app.services.chat import Chat
+from rag_app.app.services.user import User
+from rag_app.app.services.embeddings import EmbeddingsClient
+from rag_app.app.services.llm_client import LlmClient
+from rag_app.app.services.tool_handler import ToolHandler
+import rag_app.app.services.tool_handler as toolhandler_module
+from rag_app.app.services.db_manager import DatabaseManager
+from rag_app.app.models import *
 
 MOCK_TOOLS = [
     {"name": "gdpr_query",
