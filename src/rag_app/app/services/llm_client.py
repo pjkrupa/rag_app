@@ -1,5 +1,6 @@
 import time
 from collections.abc import Iterator
+import litellm
 from litellm import completion, RateLimitError, APIError
 from rag_app.app.core.config import Configurations
 from rag_app.app.models import Tool, Message, Parameters, MessageDocuments
@@ -8,43 +9,14 @@ from requests.exceptions import ConnectionError
 
 TRANSIENT_ERRORS = (ConnectionError, TimeoutError)
 
+#litellm._turn_on_debug()
+
 class LlmClient:
     def __init__(
             self, 
             configs: Configurations):
         self.configs = configs
         self.logger = configs.logger
-
-    def send_request_stream(
-            self, 
-            messages: list[MessageDocuments],
-            tools: list[Tool] | None = None
-        ) -> Iterator[dict]:
-
-        start = time.time()
-        self.logger.info(f"Sending streaming request to {self.configs.model}...")
-        messages = [obj.message for obj in messages]
-
-        params = Parameters(
-            model=self.configs.model,
-            messages=messages,
-            tools=tools if tools is not None else None,
-            stream=True,
-        )
-
-        try:
-            stream = completion(**params.model_dump(exclude_none=True))
-
-            for chunk in stream:
-                yield chunk
-
-            self.logger.info(
-                f"Streaming completed in {time.time() - start:.3f}s"
-            )
-
-        except Exception as e:
-            self.logger.error(f"Streaming LLM error: {e}")
-            raise LlmCallFailedError("Streaming LLM error") from e
 
 
     def send_request(
@@ -116,6 +88,36 @@ class LlmClient:
                 self.logger.error(f"Unrecoverable LLM error: {e}")
                 raise LlmCallFailedError("Unrecoverable LLM error") from e
 
+    def send_request_stream(
+            self, 
+            messages: list[MessageDocuments],
+            tools: list[Tool] | None = None
+        ) -> Iterator[dict]:
+
+        start = time.time()
+        self.logger.info(f"Sending streaming request to {self.configs.model}...")
+        messages = [obj.message for obj in messages]
+
+        params = Parameters(
+            model=self.configs.model,
+            messages=messages,
+            tools=tools if tools is not None else None,
+            stream=True,
+        )
+
+        try:
+            stream = completion(**params.model_dump(exclude_none=True))
+
+            for chunk in stream:
+                yield chunk
+
+            self.logger.info(
+                f"Streaming completed in {time.time() - start:.3f}s"
+            )
+
+        except Exception as e:
+            self.logger.error(f"Streaming LLM error: {e}")
+            raise LlmCallFailedError("Streaming LLM error") from e
     
     def get_messsage(self, response):
         lite_msg = response.choices[0].message

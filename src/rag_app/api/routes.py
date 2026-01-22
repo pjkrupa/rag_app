@@ -26,7 +26,7 @@ def get_root_path(request: Request) -> str:
 router = APIRouter()
 
 @router.get("/", response_class=HTMLResponse)
-async def main_page(
+def main_page(
     request: Request,
     flash_error: str | None = Cookie(default=None),
     session_id: str | None = Cookie(default=None),
@@ -73,7 +73,7 @@ async def main_page(
 
 
 @router.get("/users/{user_name}", name="user_page")
-async def get_user(
+def get_user(
     request: Request,
     user_name: str,
     session_id: str | None = Cookie(default=None),
@@ -102,7 +102,7 @@ async def get_user(
 
 
 @router.get("/user/{user_name}/chat/{chat_id}", name="individual_chat", response_class=HTMLResponse)
-async def get_chat(
+def get_chat(
     user_name: str,
     chat_id: str,
     request: Request,
@@ -128,7 +128,7 @@ async def get_chat(
 
 
 @router.post("/chat", response_class=HTMLResponse, name="chat")
-async def post_chat(
+def post_chat(
     request: Request, 
     prompt: str = Form(...),
     tool_names: list[str] = Form([]),
@@ -158,7 +158,7 @@ async def post_chat(
     )
 
 @router.post("/create_user/", name="create_user")
-async def create_user(
+def create_user(
     request: Request,
     user_name: str = Form(...),
     session_id: str | None = Cookie(default=None),

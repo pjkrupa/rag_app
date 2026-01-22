@@ -1,11 +1,10 @@
-import os
 from rag_app.app.models import *
 from rag_app.app.core.config import Configurations
 from rag_app.app.core.logging_setup import get_logger
 from rag_app.app.services.session import Session
 
-if __name__ == "__main__":
-    
+
+def main():    
     logger = get_logger()
     configs = Configurations.load(logger=logger)
 
@@ -40,7 +39,7 @@ if __name__ == "__main__":
     print("-" * 50)
     print("Ready for prompt.\n")
     while True:
-        print(f"\nAvailable tools: {orchestrator.tool_client.tool_names}. Attach to end of prompt with --tool_name to call.")
+        print(f"\n\nAvailable tools: {orchestrator.tool_client.tool_names}. Attach to end of prompt with --tool_name to call.\n")
         stream = orchestrator.process_prompt_streaming(prompt=input("\n>> "))
         print(f"Assistant: ")
         for event in stream:
@@ -51,6 +50,3 @@ if __name__ == "__main__":
                 break
             elif event.type == "done":
                 break
-        last_message = orchestrator.last_message()
-        for doc in last_message.documents:
-            print(doc)

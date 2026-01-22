@@ -19,4 +19,5 @@ dependencies = [
 
 [project.scripts]
 rag-app-serve = "rag_app.api.main:serve"
+rag-app-cli = "rag_app.cli.main:main"
 

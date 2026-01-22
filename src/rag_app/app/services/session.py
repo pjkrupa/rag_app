@@ -132,7 +132,6 @@ class Session:
     
 ########################################
 ### Methods for the CLI interface.
-### Might need work.
 ########################################
 
     def cli_get_user_name(self, user_name: str):
@@ -160,7 +159,7 @@ class Session:
                 continue
     
     # use this to parse prompts from the CLI before calling process_prompt()
-    def cli_parse_prompt(self, prompt: str) -> list[Tool] | None :
+    def cli_parse_prompt(self, prompt: str) -> tuple[str, list[Tool]] | None :
         if "--" not in prompt:
             return prompt, None
         prompt_list = prompt.split("--")
@@ -180,7 +179,7 @@ class Session:
 ### handling LLM responses as a stream
 ########################################
     def process_prompt_streaming(self, prompt: str):
-        prompt, tools = self._parse_prompt(prompt)
+        prompt, tools = self.cli_parse_prompt(prompt)
         self.chat.add_message(MessageDocuments(message=Message(role="user", content=prompt)))
 
         content_parts: list[str] = []
