@@ -49,6 +49,16 @@ class Parameters(BaseModel):
     tools: list[Tool] | None = None
     stream: bool = False
 
+parameters = Parameters(
+    model="gpt-4o",
+    messages=[(Message(
+        role="user",
+        content="tell me a story"
+            )
+        )
+    ],
+)
+
 # -----------------------------
 # Models a single result from a ChromaDB query
 # -----------------------------

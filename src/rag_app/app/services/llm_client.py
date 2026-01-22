@@ -1,15 +1,13 @@
-import time
+import time, os
 from collections.abc import Iterator
-import litellm
-from litellm import completion, RateLimitError, APIError
+from openai import OpenAI
+from openai import RateLimitError, APIError
 from rag_app.app.core.config import Configurations
 from rag_app.app.models import Tool, Message, Parameters, MessageDocuments
-from rag_app.app.core.errors import LlmCallFailedError
+from rag_app.app.core.errors import LlmCallFailedError, ConfigurationsError
 from requests.exceptions import ConnectionError
 
 TRANSIENT_ERRORS = (ConnectionError, TimeoutError)
-
-#litellm._turn_on_debug()
 
 class LlmClient:
     def __init__(
@@ -17,8 +15,9 @@ class LlmClient:
             configs: Configurations):
         self.configs = configs
         self.logger = configs.logger
+        self.openai = OpenAI(api_key=os.environ.get("API_KEY"))
 
-
+            
     def send_request(
             self, 
             messages: list[MessageDocuments],
@@ -39,7 +38,7 @@ class LlmClient:
                         messages=messages,
                         tools=tools if tools is not None else None,
                         )
-                response = completion(**params.model_dump(exclude_none=True))
+                response = self.openai.chat.completions.create(**params.model_dump(exclude_none=True))
                 self.logger.info(f"Successfully queried {self.configs.model}.")
                 self.logger.info(f"RESPONSE TIME: {time.time() - start:.3f}s")
                 return response
@@ -88,37 +87,39 @@ class LlmClient:
                 self.logger.error(f"Unrecoverable LLM error: {e}")
                 raise LlmCallFailedError("Unrecoverable LLM error") from e
 
-    def send_request_stream(
-            self, 
-            messages: list[MessageDocuments],
-            tools: list[Tool] | None = None
-        ) -> Iterator[dict]:
-
-        start = time.time()
-        self.logger.info(f"Sending streaming request to {self.configs.model}...")
-        messages = [obj.message for obj in messages]
-
-        params = Parameters(
-            model=self.configs.model,
-            messages=messages,
-            tools=tools if tools is not None else None,
-            stream=True,
-        )
-
-        try:
-            stream = completion(**params.model_dump(exclude_none=True))
-
-            for chunk in stream:
-                yield chunk
-
-            self.logger.info(
-                f"Streaming completed in {time.time() - start:.3f}s"
-            )
-
-        except Exception as e:
-            self.logger.error(f"Streaming LLM error: {e}")
-            raise LlmCallFailedError("Streaming LLM error") from e
-    
     def get_messsage(self, response):
-        lite_msg = response.choices[0].message
-        return Message.model_validate(lite_msg.model_dump())
+        msg = response.choices[0].message
+        return Message.model_validate(msg.model_dump())
+    
+# this will only work with OpenAI().responses, (above uses OpenAI().chat.completions) so it needs some refactoring.
+    # def send_request_stream(
+    #         self, 
+    #         messages: list[MessageDocuments],
+    #         tools: list[Tool] | None = None
+    #     ) -> Iterator[dict]:
+
+    #     start = time.time()
+    #     self.logger.info(f"Sending streaming request to {self.configs.model}...")
+    #     messages = [obj.message for obj in messages]
+
+    #     params = Parameters(
+    #         model=self.configs.model,
+    #         messages=messages,
+    #         tools=tools if tools is not None else None,
+    #         stream=True,
+    #     )
+
+    #     try:
+    #         stream = completion(**params.model_dump(exclude_none=True))
+
+    #         for chunk in stream:
+    #             yield chunk
+
+    #         self.logger.info(
+    #             f"Streaming completed in {time.time() - start:.3f}s"
+    #         )
+
+    #     except Exception as e:
+    #         self.logger.error(f"Streaming LLM error: {e}")
+    #         raise LlmCallFailedError("Streaming LLM error") from e
+    

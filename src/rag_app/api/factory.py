@@ -11,6 +11,7 @@ from rag_app.api.routes import router
 
 
 def create_app():
+
     BASE_DIR = Path(__file__).resolve().parent
 
     templates = Jinja2Templates(directory=BASE_DIR / "templates")

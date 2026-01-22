@@ -1,8 +1,10 @@
+from dotenv import load_dotenv
 from rag_app.app.models import *
 from rag_app.app.core.config import Configurations
 from rag_app.app.core.logging_setup import get_logger
 from rag_app.app.services.session import Session
 
+load_dotenv()
 
 def main():    
     logger = get_logger()
@@ -38,15 +40,28 @@ def main():
     print("-" * 50)
     print("-" * 50)
     print("Ready for prompt.\n")
+    
     while True:
         print(f"\n\nAvailable tools: {orchestrator.tool_client.tool_names}. Attach to end of prompt with --tool_name to call.\n")
-        stream = orchestrator.process_prompt_streaming(prompt=input("\n>> "))
+
+        raw_prompt = input("\n>> ")
+        prompt, tool_names = orchestrator.cli_parse_prompt(raw_prompt)
+        response = orchestrator.process_prompt(prompt=prompt, tool_names=tool_names)
         print(f"Assistant: ")
-        for event in stream:
-            if event.type == "token":
-                print(event.content, end="", flush=True)
-            elif event.type == "error":
-                print(f"\n[ERROR] {event.content}")
-                break
-            elif event.type == "done":
-                break
+        print(response.message.content)
+    
+    # for streaming responses (this doesn't work currently because the chat/completions endpoint doesn't stream.)
+    # while True:
+    #     print(f"\n\nAvailable tools: {orchestrator.tool_client.tool_names}. Attach to end of prompt with --tool_name to call.\n")
+    #     raw_prompt = input("\n>> ")
+    #     prompt, tool_names = orchestrator.cli_parse_prompt(raw_prompt)
+    #     stream = orchestrator.process_prompt_streaming(prompt=prompt, tool_names=tool_names)
+    #     print(f"Assistant: ")
+    #     for event in stream:
+    #         if event.type == "token":
+    #             print(event.content, end="", flush=True)
+    #         elif event.type == "error":
+    #             print(f"\n[ERROR] {event.content}")
+    #             break
+    #         elif event.type == "done":
+    #             break

@@ -1,5 +1,7 @@
 import uvicorn
 from rag_app.api.factory import create_app
+from dotenv import load_dotenv
+load_dotenv()
 
 def serve():
     uvicorn.run(

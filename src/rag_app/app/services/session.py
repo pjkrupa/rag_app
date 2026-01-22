@@ -159,156 +159,159 @@ class Session:
                 continue
     
     # use this to parse prompts from the CLI before calling process_prompt()
-    def cli_parse_prompt(self, prompt: str) -> tuple[str, list[Tool]] | None :
+    def cli_parse_prompt(self, prompt: str) -> tuple[str, list[str] | None]:
         if "--" not in prompt:
             return prompt, None
         prompt_list = prompt.split("--")
         prompt = prompt_list.pop(0)
 
-        tool_list = []
+        tool_names = []
         for tool_name in prompt_list:
             tool_name = tool_name.strip()
             if tool_name not in self.tool_client.tool_names:
                 self.logger.warning(f"Tool not found: {tool_name}. Skipping.")
             else:
-                tool_list.append(self.tool_client.tool_chain[tool_name])
-        return prompt, tool_list
+                tool_names.append(tool_name)
+        return prompt, tool_names
     
 ########################################
 ### the following are methods for 
 ### handling LLM responses as a stream
+### depricated, as LiteLLM was removed and 
+### this has to be handled with the requests/ OpenAI endpoint,
+### not chat/completions/
 ########################################
-    def process_prompt_streaming(self, prompt: str):
-        prompt, tools = self.cli_parse_prompt(prompt)
-        self.chat.add_message(MessageDocuments(message=Message(role="user", content=prompt)))
+    # def process_prompt_streaming(self, prompt: str):
+    #     prompt, tools = self.cli_parse_prompt(prompt)
+    #     self.chat.add_message(MessageDocuments(message=Message(role="user", content=prompt)))
 
-        content_parts: list[str] = []
-        tool_calls: list[ToolCall] = []
-        tool_call_flag: bool = False
+    #     content_parts: list[str] = []
+    #     tool_calls: list[ToolCall] = []
+    #     tool_call_flag: bool = False
 
-        try:
-            stream = self.llm_client.send_request_stream(messages=self.chat.messages, tools=tools)
-            for chunk in stream:
-                delta = chunk["choices"][0]["delta"]
+    #     try:
+    #         stream = self.llm_client.send_request_stream(messages=self.chat.messages, tools=tools)
+    #         for chunk in stream:
+    #             delta = chunk["choices"][0]["delta"]
 
-                if "content" in delta:
-                    token = delta["content"]
-                    if token is not None:
-                        content_parts.append(token)
-                        yield StreamEvent(type="token", content=token)
+    #             if "content" in delta:
+    #                 token = delta["content"]
+    #                 if token is not None:
+    #                     content_parts.append(token)
+    #                     yield StreamEvent(type="token", content=token)
 
-                if "tool_calls" in delta and delta["tool_calls"] is not None:
-                    tool_call_flag = True
-                    self.logger.info(f"tool calls in delta: {delta["tool_calls"]}")
-                    self._accumulate_tool_calls(tool_calls, delta["tool_calls"])
-                    self.logger.info(f"tool_calls after _accumulate_tool_calls: {tool_calls}")
+    #             if "tool_calls" in delta and delta["tool_calls"] is not None:
+    #                 tool_call_flag = True
+    #                 self.logger.info(f"tool calls in delta: {delta["tool_calls"]}")
+    #                 self._accumulate_tool_calls(tool_calls, delta["tool_calls"])
+    #                 self.logger.info(f"tool_calls after _accumulate_tool_calls: {tool_calls}")
 
-            finish_reason = chunk["choices"][0].get("finish_reason")
-            self.logger.info(f"final chunk: {chunk}")
+    #         finish_reason = chunk["choices"][0].get("finish_reason")
+    #         self.logger.info(f"final chunk: {chunk}")
 
-            if tool_call_flag is True:
-                response_message = Message(role="assistant", tool_calls=tool_calls)
-                yield from self._run_tool_flow_stream(response_message=response_message)
-                return
-            else:
-                final_message = Message(
-                        role="assistant",
-                        content="".join(content_parts),
-                        )
-                self.chat.add_message(MessageDocuments(message=final_message))
+    #         if tool_call_flag is True:
+    #             response_message = Message(role="assistant", tool_calls=tool_calls)
+    #             yield from self._run_tool_flow_stream(response_message=response_message)
+    #             return
+    #         else:
+    #             final_message = Message(
+    #                     role="assistant",
+    #                     content="".join(content_parts),
+    #                     )
+    #             self.chat.add_message(MessageDocuments(message=final_message))
 
-            yield StreamEvent(type="done")
+    #         yield StreamEvent(type="done")
 
-        except LlmCallFailedError as e:
-            self.logger.error(f"Streaming failed: {e}")
-            yield StreamEvent(type="error", content=str(e))
+    #     except LlmCallFailedError as e:
+    #         self.logger.error(f"Streaming failed: {e}")
+    #         yield StreamEvent(type="error", content=str(e))
 
-    def _accumulate_tool_calls(
-            self,
-            tool_calls: list[ToolCall],
-            delta_tool_calls: list[dict],
-        ) -> None:
-        """
-        Incrementally builds ToolCall objects from streamed tool_call deltas.
+    # def _accumulate_tool_calls(
+    #         self,
+    #         tool_calls: list[ToolCall],
+    #         delta_tool_calls: list[dict],
+    #     ) -> None:
+    #     """
+    #     Incrementally builds ToolCall objects from streamed tool_call deltas.
 
-        Mutates `tool_calls` in place.
-        """
+    #     Mutates `tool_calls` in place.
+    #     """
 
-        for call in delta_tool_calls:
-            # this is a little tricky because the delta chunks only use the call ID in the first chunk and it's None after that
-            # so you have to grab the index of the call and add it to the pydantic model object as "_index" using .setattr()
-            # then when you get an existing tool_call object from tool_calls to write the next chunk to, find it by "_index"
-            call_id = call["id"]
-            call_index = call["index"]
+    #     for call in delta_tool_calls:
+    #         # this is a little tricky because the delta chunks only use the call ID in the first chunk and it's None after that
+    #         # so you have to grab the index of the call and add it to the pydantic model object as "_index" using .setattr()
+    #         # then when you get an existing tool_call object from tool_calls to write the next chunk to, find it by "_index"
+    #         call_id = call["id"]
+    #         call_index = call["index"]
 
-            tool_call = next(
-                (tc for tc in tool_calls if getattr(tc, "_index", None) == call_index),
-                None
-            )
+    #         tool_call = next(
+    #             (tc for tc in tool_calls if getattr(tc, "_index", None) == call_index),
+    #             None
+    #         )
 
-            if tool_call is None:
-                tool_call = ToolCall(
-                    id=call_id,
-                    type="function",
-                    function=FunctionCall(
-                        name=call["function"].get("name"),
-                        arguments=""
-                    ),
-                )
+    #         if tool_call is None:
+    #             tool_call = ToolCall(
+    #                 id=call_id,
+    #                 type="function",
+    #                 function=FunctionCall(
+    #                     name=call["function"].get("name"),
+    #                     arguments=""
+    #                 ),
+    #             )
 
-                setattr(tool_call, "_index", call_index)
-                tool_calls.append(tool_call)
+    #             setattr(tool_call, "_index", call_index)
+    #             tool_calls.append(tool_call)
 
-            args_fragment = call["function"].get("arguments")
-            if args_fragment:
-                tool_call.function.arguments += args_fragment
+    #         args_fragment = call["function"].get("arguments")
+    #         if args_fragment:
+    #             tool_call.function.arguments += args_fragment
 
-    def _run_tool_flow_stream(self, response_message: Message) -> Iterator[dict]:
+    # def _run_tool_flow_stream(self, response_message: Message) -> Iterator[dict]:
         
-        # add the model's tool_call message to the chat
-        self.chat.add_message(msg_docs=MessageDocuments(message=response_message))
+    #     # add the model's tool_call message to the chat
+    #     self.chat.add_message(msg_docs=MessageDocuments(message=response_message))
 
-        # call the tool (RAG client), get: 
-        #   1) the message to return to the LLM, 
-        #   2) the documents returned by the RAG client
-        # they will be a list of MessageDocuments objects
-        for tool_call in response_message.tool_calls:
-            self.logger.info(f"Tool call! name: {tool_call.function.name}, arguments: {tool_call.function.arguments}")
-        try:
-            tool_responses = self.tool_client.handle(response_message)
-        except RagClientFailedError as e:
-            return self._fail(f"RAG client failed: {e}")
+    #     # call the tool (RAG client), get: 
+    #     #   1) the message to return to the LLM, 
+    #     #   2) the documents returned by the RAG client
+    #     # they will be a list of MessageDocuments objects
+    #     for tool_call in response_message.tool_calls:
+    #         self.logger.info(f"Tool call! name: {tool_call.function.name}, arguments: {tool_call.function.arguments}")
+    #     try:
+    #         tool_responses = self.tool_client.handle(response_message)
+    #     except RagClientFailedError as e:
+    #         return self._fail(f"RAG client failed: {e}")
         
-        # TODO: i think there's a problem with the logic here.
-        documents = []
-        for msg_docs in tool_responses:
-            self.logger.info("Tool call added to chat.")
-            self.logger.info(f"tool_call_id: {msg_docs.message.tool_call_id}")
-            documents.extend(msg_docs.documents)
-            self.chat.add_message(msg_docs=msg_docs)
+    #     # TODO: i think there's a problem with the logic here.
+    #     documents = []
+    #     for msg_docs in tool_responses:
+    #         self.logger.info("Tool call added to chat.")
+    #         self.logger.info(f"tool_call_id: {msg_docs.message.tool_call_id}")
+    #         documents.extend(msg_docs.documents)
+    #         self.chat.add_message(msg_docs=msg_docs)
 
-        # send the query with the context gathered from the RAG client
-        try:
-            stream = self.llm_client.send_request_stream(messages=self.chat.messages)
-        except LlmCallFailedError as e:
-            return self._fail(f"LLM call failed: {e}")
+    #     # send the query with the context gathered from the RAG client
+    #     try:
+    #         stream = self.llm_client.send_request_stream(messages=self.chat.messages)
+    #     except LlmCallFailedError as e:
+    #         return self._fail(f"LLM call failed: {e}")
         
-        content_parts: list = []
+    #     content_parts: list = []
 
-        for chunk in stream:
-            token = chunk["choices"][0]["delta"]["content"]
-            if token is not None:
-                content_parts.append(token)
-            yield StreamEvent(type="token", content=token)
+    #     for chunk in stream:
+    #         token = chunk["choices"][0]["delta"]["content"]
+    #         if token is not None:
+    #             content_parts.append(token)
+    #         yield StreamEvent(type="token", content=token)
 
-        # then combine the streamed tokens, create the message, and add it to the chat as a MessageDocuments
-        # containing the documents/metadata returned by the RAG client.
-        final_response_message = Message(
-                role="assistant",
-                content="".join(content_parts),
-            )
-        msg_docs = MessageDocuments(message=final_response_message, documents=documents)
-        self.chat.add_message(msg_docs=msg_docs)
+    #     # then combine the streamed tokens, create the message, and add it to the chat as a MessageDocuments
+    #     # containing the documents/metadata returned by the RAG client.
+    #     final_response_message = Message(
+    #             role="assistant",
+    #             content="".join(content_parts),
+    #         )
+    #     msg_docs = MessageDocuments(message=final_response_message, documents=documents)
+    #     self.chat.add_message(msg_docs=msg_docs)
 
-        # and close the stream.
-        yield StreamEvent(type="done")
+    #     # and close the stream.
+    #     yield StreamEvent(type="done")
