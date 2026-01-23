@@ -24,8 +24,10 @@ class Session:
         self._log_configs()
 
     def _log_configs(self):
-        self.logger.debug(f"System prompt: {self.configs.system_prompt}")
-
+        self.logger.info(f"System prompt: {self.configs.system_prompt}")
+        self.logger.info(f"LLM API endpoint: {self.configs.api_base}")
+        self.logger.info(f"Model name: {self.configs.model}")
+        
     def default_user(self,):
         try:
             self.db.create_user(user_name="default")

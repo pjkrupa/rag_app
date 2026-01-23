@@ -15,7 +15,6 @@ class Configurations:
     @classmethod
     def load(cls, logger: Logger):
         yaml_path = os.getenv("CONFIGS_PATH")
-        print(f"configs path from .env: {yaml_path}")
         with open(yaml_path, "r") as f:
             data = yaml.safe_load(f)
         try:

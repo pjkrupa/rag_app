@@ -15,9 +15,21 @@ class LlmClient:
             configs: Configurations):
         self.configs = configs
         self.logger = configs.logger
-        self.openai = OpenAI(api_key=os.environ.get("API_KEY"))
+        self.openai = OpenAI(
+            api_key=os.environ.get("API_KEY"),
+            base_url=self.configs.api_base
+            )
 
-            
+    def extra_body(self) -> dict | None:
+        """
+        helper function that returns whatever extra arguments that a particular model may require.
+        """
+        # this turns off "thinking" mode for the Qwen models
+        if "qwen" in self.configs.model:
+            return {"chat_template_kwargs": {"enable_thinking": False},}
+        else:
+            return None
+
     def send_request(
             self, 
             messages: list[MessageDocuments],
@@ -38,7 +50,10 @@ class LlmClient:
                         messages=messages,
                         tools=tools if tools is not None else None,
                         )
-                response = self.openai.chat.completions.create(**params.model_dump(exclude_none=True))
+                response = self.openai.chat.completions.create(
+                    **params.model_dump(exclude_none=True),
+                    extra_body=self.extra_body()
+                    )
                 self.logger.info(f"Successfully queried {self.configs.model}.")
                 self.logger.info(f"RESPONSE TIME: {time.time() - start:.3f}s")
                 return response
