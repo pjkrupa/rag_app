@@ -1,14 +1,35 @@
 from dotenv import load_dotenv
+import argparse
 from rag_app.app.models import *
 from rag_app.app.core.config import Configurations
 from rag_app.app.core.logging_setup import get_logger
 from rag_app.app.services.session import Session
 
+#########################################
+# The CLI entrypoint is mainly used for development. 
+# To launch it, once the rag_app package is installed:
+#    
+#     rag-app-cli
+#
+# This launches the CLI with the "default" user.
+# To launch it with a specific user:
+#    
+#     rag-app-cli -u <user_name>
+#########################################
+
 load_dotenv()
+
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "-u",
+    "--user",
+    default="default"
+)
 
 def main():    
     logger = get_logger()
     configs = Configurations.load(logger=logger)
+    args = parser.parse_args()
 
     # start a session
     print("-" * 50)
@@ -18,29 +39,9 @@ def main():
     print("-" * 50)
     
     orchestrator = Session(configs=configs)
-    while True:
-        print("Please choose: (1) Existing user; (2) Create user")
-        selection = input(">> ")
-        try:
-            selection = int(selection)
-        except Exception as e:
-            "Not a valid selection."
-            continue
-        match selection:
-            case 1:
-                orchestrator.cli_get_user_name(user_name=input("Enter your user name>> "))
-                break
-            case 2:
-                orchestrator.cli_create_user(user_name=input("Select a user name>> "))
-                break
-            case _:
-                print("Not a valid selection.")
-                continue
-    
-    print("-" * 50)
-    print("-" * 50)
-    print("Ready for prompt.\n")
-    
+    orchestrator.load_user(args.user)
+    orchestrator.logger.info(f"User loaded: {args.user}")
+
     while True:
         print(f"\n\nAvailable tools: {orchestrator.tool_client.tool_names}. Attach to end of prompt with --tool_name to call.\n")
 
