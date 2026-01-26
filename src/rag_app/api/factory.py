@@ -12,10 +12,10 @@ from rag_app.api.routes import router
 
 def create_app():
 
-    BASE_DIR = Path(__file__).resolve().parents[1]
+    BASE_DIR = Path(__file__).resolve().parents[3]
 
-    STATIC_DIR = BASE_DIR / "api" / "static"
-    TEMPLATES_DIR = BASE_DIR / "api" / "templates"
+    STATIC_DIR = BASE_DIR / "static"
+    TEMPLATES_DIR = BASE_DIR / "templates"
 
     templates = Jinja2Templates(directory=TEMPLATES_DIR)
     templates.env.filters["markdown"] = lambda text: markdown.markdown(
