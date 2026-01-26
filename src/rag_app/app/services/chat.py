@@ -67,7 +67,28 @@ class Chat:
             })
             messages.append(msg_docs)
         return messages
+    
+    def prune(self):
+        """
+        prunes the "tool"-role messages from self.messages.
+        useful to prevent tool call results from blowing up context window.
+        only call after the tool has been injested by the LLM.
+        """
+        keep = []
+        count = 0
+        for msg_docs in self.messages:
+            if msg_docs.message.role == "tool":
+                count += 1
+                continue
+            elif msg_docs.message.role == "assistant" and msg_docs.message.tool_calls:
+                continue
+            else:
+                keep.append(msg_docs)
 
+        self.messages = keep
+        self.logger.info(f"Pruned {count} tool calls from the chat.")
+        return
+    
     def _load_messages(self):
         messages_docs = self.db.get_messages(chat_id=self.id)
         if messages_docs is None:

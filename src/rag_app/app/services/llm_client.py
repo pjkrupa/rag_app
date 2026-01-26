@@ -25,7 +25,7 @@ class LlmClient:
         helper function that returns whatever extra arguments that a particular model may require.
         """
         # this turns off "thinking" mode for the Qwen models
-        if "qwen" in self.configs.model:
+        if "qwen" in self.configs.model.lower():
             return {"chat_template_kwargs": {"enable_thinking": False},}
         else:
             return None

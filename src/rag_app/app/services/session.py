@@ -27,7 +27,7 @@ class Session:
         self.logger.info(f"System prompt: {self.configs.system_prompt}")
         self.logger.info(f"LLM API endpoint: {self.configs.api_base}")
         self.logger.info(f"Model name: {self.configs.model}")
-        
+
     def default_user(self,):
         try:
             self.db.create_user(user_name="default")
@@ -74,6 +74,7 @@ class Session:
         # send the query with the context gathered from the RAG client
         try:
             tool_response = self.llm_client.send_request(messages=self.chat.messages)
+            self.logger.info(f"Tokens in tool_response prompt with RAG context: {tool_response.usage.prompt_tokens}")
         except LlmCallFailedError as e:
             return self._fail(f"LLM call failed: {e}")
 
@@ -82,6 +83,10 @@ class Session:
         final_response_message = self.llm_client.get_messsage(response=tool_response)
         msg_docs = MessageDocuments(message=final_response_message, documents=documents)
         self.chat.add_message(msg_docs)
+
+        # removes the 'tool' messages from the chat to save on the context window.
+        # they are still saved in the database.
+        self.chat.prune()
         return msg_docs
     
     def load_chat(self, chat_id: int):
@@ -94,6 +99,8 @@ class Session:
             configs=self.configs, 
             chat_id=chat_id,
             )
+        # removes 'tool' messages loaded from the db to save on the context window.
+        self.chat.prune()
         
     def load_user(self, user_name: str):
         self.user = User(configs=self.configs, db=self.db, user_name=user_name)
@@ -122,6 +129,8 @@ class Session:
         # intial call to the LLM
         try:
             response = self.llm_client.send_request(messages=self.chat.messages, tools=tools)
+            self.logger.info(f"Tokens in the prompt: {response.usage.prompt_tokens}")
+            
         except LlmCallFailedError as e:
             return self._fail(f"LLM call failed: {e}")
         response_message = self.llm_client.get_messsage(response=response)
