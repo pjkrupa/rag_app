@@ -12,9 +12,12 @@ from rag_app.api.routes import router
 
 def create_app():
 
-    BASE_DIR = Path(__file__).resolve().parent
+    BASE_DIR = Path(__file__).resolve().parents[1]
 
-    templates = Jinja2Templates(directory=BASE_DIR / "templates")
+    STATIC_DIR = BASE_DIR / "api" / "static"
+    TEMPLATES_DIR = BASE_DIR / "api" / "templates"
+
+    templates = Jinja2Templates(directory=TEMPLATES_DIR)
     templates.env.filters["markdown"] = lambda text: markdown.markdown(
         text,
         extensions=["fenced_code", "tables"]
@@ -36,7 +39,7 @@ def create_app():
     app = FastAPI(root_path=configs.root_path)
     app.mount(
             "/static",
-            StaticFiles(directory=BASE_DIR / "static"),
+            StaticFiles(directory=STATIC_DIR),
             name="static",
         )
     
