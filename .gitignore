@@ -8,6 +8,8 @@ wheels/
 
 # Virtual environments
 .venv
+
+configurations/mine
 stash/
 .env
 rag.log
