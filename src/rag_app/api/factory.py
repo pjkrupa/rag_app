@@ -28,9 +28,9 @@ def create_app():
 
     logger = get_logger()
 
-    logger.debug(f"Base directory: {BASE_DIR}")
-    logger.debug(f"Static directory: {STATIC_DIR}")
-    logger.debug(f"Templates directory: {TEMPLATES_DIR}")
+    logger.debug("BASE_DIR=%s", BASE_DIR)
+    logger.debug("STATIC_DIR=%s exists=%s", STATIC_DIR, STATIC_DIR.exists())
+    logger.debug("TEMPLATES_DIR=%s exists=%s", TEMPLATES_DIR, TEMPLATES_DIR.exists())
 
     # instantiates the configurations by fetching them from a YAML file
     # and logging any problems
@@ -41,15 +41,28 @@ def create_app():
 
 
     app = FastAPI(root_path=configs.root_path)
+
+    logger.debug("FastAPI root_path=%r", app.root_path)
+
     app.mount(
-            "/static",
-            StaticFiles(directory=STATIC_DIR),
-            name="static",
+        "/static",
+        StaticFiles(directory=STATIC_DIR),
+        name="static",
         )
+    
+    logger.debug(
+        "Mounted static: url=/static → dir=%s exists=%s",
+        STATIC_DIR,
+        STATIC_DIR.exists(),
+    )
     
     app.include_router(router)
     app.state.templates = templates
     app.state.configs = configs
 
+    logger.debug(
+        "Registered routes: %s",
+        [getattr(r, "path", str(r)) for r in app.routes],
+    )
     return app
 
