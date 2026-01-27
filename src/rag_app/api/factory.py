@@ -12,10 +12,10 @@ from rag_app.api.routes import router
 
 def create_app():
 
-    BASE_DIR = Path(__file__).resolve().parents[3]
+    BASE_DIR = Path(__file__).resolve().parents[1]
 
-    STATIC_DIR = BASE_DIR / "static"
-    TEMPLATES_DIR = BASE_DIR / "templates"
+    STATIC_DIR = BASE_DIR / "api" / "static"
+    TEMPLATES_DIR = BASE_DIR / "api" / "templates"
 
     templates = Jinja2Templates(directory=TEMPLATES_DIR)
     templates.env.filters["markdown"] = lambda text: markdown.markdown(
@@ -27,6 +27,10 @@ def create_app():
     get_session_manager()
 
     logger = get_logger()
+
+    logger.debug(f"Base directory: {BASE_DIR}")
+    logger.debug(f"Static directory: {STATIC_DIR}")
+    logger.debug(f"Templates directory: {TEMPLATES_DIR}")
 
     # instantiates the configurations by fetching them from a YAML file
     # and logging any problems
