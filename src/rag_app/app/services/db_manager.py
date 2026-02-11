@@ -37,6 +37,10 @@ class DatabaseManager:
             created_at INTEGER
             )
         """)
+        
+        # creates a default user (used in CLI if you don't use the -u flag to load a user)
+        if not self.check_user(user_name="default"):
+            self.create_user(user_name="default")
     
     def _create_chats_table(self, conn):
         """

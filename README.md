@@ -16,7 +16,7 @@ Originally, I tried to use Open-WebUI for this, but the RAG and tool-calling opt
 
 ## Installation
 
-If you want to install `rag_app` anyway, clone the repo and set a `configs.yaml` file to your specifications (see examples in the `configurations` folder). Create an `.env` file defining `CONFIGS_PATH` (path to your `configs.yaml` file) and `API_KEY` (key for your LLM provider, leave blank if there is none). Then: 
+If you want to install `rag_app` anyway, clone the repo and set a `configs.yaml` file to your specifications (see example in the `configurations` folder). Create an `.env` file defining `CONFIGS_PATH` (path to your `configs.yaml` file) and `API_KEY` (key for your LLM provider, leave blank if there is none). Then: 
 
     cd rag_app
     uv venv
